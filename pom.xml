@@ -42,7 +42,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>Main</mainClass>
+              <mainClass>ar.edu.itba.ss.cushioned_oscilator.core.Main</mainClass>
             </manifest>
           </archive>
           <!-- Rename .jar file and disable the append of 'jar-with-dependencies -->
