@@ -1,0 +1,69 @@
+package ar.edu.itba.ss.cushioned_oscilator.core;
+
+import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
+import ar.edu.itba.ss.cushioned_oscilator.models.Vector2D;
+
+class CushionedOscillator {
+  private final double k;
+  private final double gamma;
+  private double systemTime;
+  private final double dt;
+  private final double beta;
+  private Particle particle;
+
+  // The class which will calculate the new conditions
+  private final PhysicsIntegration physicsIntegration;
+
+  //TODO: Receive the class that will calculate the new conditions
+  /**
+   * Set the initial conditions of the damped oscillator
+   * @param mass the mass of the particle attached to the system
+   * @param r the initial position of the particle
+   * @param k the constant of the oscillator
+   * @param gamma the damping factor
+   * @param dt the time differential to which the oscillator calculates the new conditions
+   */
+  CushionedOscillator(final double mass, final double r, final double k, final double gamma, final double dt,
+                      final PhysicsIntegration physicsIntegration) {
+    this.k = k;
+    this.gamma = gamma;
+    this.dt = dt;
+    this.physicsIntegration = physicsIntegration;
+    this.beta = gamma / (2 * mass);
+    this.systemTime = 0;
+
+
+    // Create the particle with position, mass and initial velocity
+    final double initialVx = -beta;
+
+    this.particle = Particle.builder(r, 0)
+            .mass(mass)
+            .vx(initialVx)
+            .build();
+  }
+
+  public void evolveSystem() {
+    //TODO: Delete immutability for Particles
+
+    particle = particle.withForceX(getParticleForceX());
+
+    final Vector2D newPosition = physicsIntegration.calculatePosition(particle, systemTime, dt);
+    final Vector2D newVelocity = physicsIntegration.calculateVelocity(particle, systemTime, dt);
+
+    // TODO: update whole velocity and position with a vector
+    particle = particle
+            .withX(newPosition.x())
+            .withY(newPosition.y())
+            .withVx(newVelocity.x())
+            .withVy(newVelocity.y());
+
+    systemTime += dt;
+
+    System.out.println(particle.x());
+  }
+
+  private double getParticleForceX() {
+    return -k * particle.x() - gamma * particle.vx();
+  }
+}

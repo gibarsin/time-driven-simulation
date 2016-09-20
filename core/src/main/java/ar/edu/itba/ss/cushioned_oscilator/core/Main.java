@@ -1,5 +1,8 @@
 package ar.edu.itba.ss.cushioned_oscilator.core;
 
+import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
+import ar.edu.itba.ss.cushioned_oscilator.services.EulerIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static ar.edu.itba.ss.cushioned_oscilator.core.Main.EXIT_CODE.*;
@@ -33,7 +37,7 @@ public class Main {
                   "Arguments: \n" +
                   "* gen staticdat <m> <r> <k> <gamma> <tf> : \n" +
                   "\t generates an output/static.dat file with the desired parameters.\n" +
-                  "* osc <path/to/static.dat>\n" +
+                  "* osc <path/to/static.dat> <dt>\n" +
                   "\t runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
                   "* gen ovito <path/to/static.dat> <path/to/output.dat> : \n"+
                   "\t generates an output/graphics.xyz file (for Ovito) with the result of the simulation\n " +
@@ -198,10 +202,12 @@ public class Main {
   }
 
   private static void cushionedOscillator(final String[] args) {
-    if (args.length != 2) {
+    if (args.length != 3) {
       System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
       exit(BAD_N_ARGUMENTS);
     }
+
+    final double dt = Double.parseDouble(args[2]);
 
     final StaticData staticData = loadStaticFile(args[1]);
 
@@ -210,7 +216,41 @@ public class Main {
               "Please check the input files.");
       exit(BAD_ARGUMENT);
     }
+
+    // Create file for first iteration
+    final File dataFolder = new File(DESTINATION_FOLDER);
+    dataFolder.mkdirs(); // tries to make directories for the .dat files
+
+    /* delete previous dynamic.dat file, if any */
+    final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
+    final Path pathToGraphicsFile = Paths.get(DESTINATION_FOLDER, DATA_FOR_GRAPHICS_FILE);
+
+    if(!deleteIfExists(pathToDatFile)) {
+      return;
+    }
+    if(!deleteIfExists(pathToGraphicsFile)) {
+      return;
+    }
+
+    final PhysicsIntegration physicsIntegration = new EulerIntegration(); //TODO: Euler should only be used for the first calculation
+
+    final CushionedOscillator cushionedOscillator = new CushionedOscillator(
+            staticData.mass,
+            staticData.r,
+            staticData.k,
+            staticData.gamma,
+            dt,
+            physicsIntegration
+    );
+
+    long i = 0;
+
+    for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
+      cushionedOscillator.evolveSystem();
+      i++;
+    }
   }
+
 
   /**
    * Try to delete a file, whether it exists or not

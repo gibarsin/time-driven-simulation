@@ -27,7 +27,7 @@ public final class EulerIntegration implements PhysicsIntegration {
     }
 
     @Override
-    public Vector2D calculateVelocity(Particle particle, double t, double dt) {
+    public Vector2D calculateVelocity(final Particle particle, final double t, final double dt) {
         final Vector2D currentVelocity = new Vector2D(particle.vx(), particle.vy());
         final Vector2D forceFactor = new Vector2D(particle.forceX(), particle.forceY());
 
