@@ -1,8 +1,8 @@
 package ar.edu.itba.ss.cushioned_oscilator.core;
 
 import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
-import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
 import ar.edu.itba.ss.cushioned_oscilator.services.EulerIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.services.VerletIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static ar.edu.itba.ss.cushioned_oscilator.core.Main.EXIT_CODE.*;
@@ -228,11 +226,13 @@ public class Main {
     if(!deleteIfExists(pathToDatFile)) {
       return;
     }
-    if(!deleteIfExists(pathToGraphicsFile)) {
+    if(!deleteIfExists(pathToGraphicsFile)){
       return;
     }
 
-    final PhysicsIntegration physicsIntegration = new EulerIntegration(); //TODO: Euler should only be used for the first calculation
+    final PhysicsIntegration eulerIntegration = new EulerIntegration(); //TODO: Euler should only be used for the first calculation
+
+    final PhysicsIntegration verletIntegration = new VerletIntegration(eulerIntegration); //TODO: Euler should only be used for the first calculation
 
     final CushionedOscillator cushionedOscillator = new CushionedOscillator(
             staticData.mass,
@@ -240,7 +240,7 @@ public class Main {
             staticData.k,
             staticData.gamma,
             dt,
-            physicsIntegration
+            verletIntegration
     );
 
     long i = 0;

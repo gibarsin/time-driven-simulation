@@ -12,13 +12,23 @@ public class Vector2D {
   public Vector2D add(final Vector2D vector) {
     this.x += vector.x();
     this.y += vector.y();
-
+    return this;
+  }
+  public Vector2D sub(final Vector2D vector) {
+    this.x -= vector.x();
+    this.y -= vector.y();
     return this;
   }
 
   public Vector2D times(final double scalar) {
     this.x *= scalar;
     this.y *= scalar;
+    return this;
+  }
+
+  public Vector2D div(final double scalar) {
+    this.x /= scalar;
+    this.y /= scalar;
 
     return this;
   }

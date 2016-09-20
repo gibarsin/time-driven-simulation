@@ -66,4 +66,6 @@ class CushionedOscillator {
   private double getParticleForceX() {
     return -k * particle.x() - gamma * particle.vx();
   }
+
+
 }
