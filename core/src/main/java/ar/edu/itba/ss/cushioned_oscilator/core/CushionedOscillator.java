@@ -48,15 +48,25 @@ class CushionedOscillator {
 
     particle = particle.withForceX(getParticleForceX());
 
+    // It's IMPORTANT to maintain the order in which calculatePosition and calculateVelocity are called, since velocity depends on position.
     final Vector2D newPosition = physicsIntegration.calculatePosition(particle, systemTime, dt);
-    final Vector2D newVelocity = physicsIntegration.calculateVelocity(particle, systemTime, dt);
 
-    // TODO: update whole velocity and position with a vector
     particle = particle
             .withX(newPosition.x())
-            .withY(newPosition.y())
+            .withY(newPosition.y());
+
+    final Vector2D newVelocity = physicsIntegration.calculateVelocity(particle, systemTime, dt);
+
+    particle = particle
             .withVx(newVelocity.x())
             .withVy(newVelocity.y());
+
+    // TODO: update whole velocity and position with a vector
+//    particle = particle
+//            .withX(newPosition.x())
+//            .withY(newPosition.y())
+//            .withVx(newVelocity.x())
+//            .withVy(newVelocity.y());
 
     systemTime += dt;
     return;

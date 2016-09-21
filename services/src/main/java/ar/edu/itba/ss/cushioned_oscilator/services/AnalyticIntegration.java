@@ -24,7 +24,8 @@ public class AnalyticIntegration implements PhysicsIntegration {
 
     @Override
     public Vector2D calculatePosition(Particle particle, double t, double dt) {
-        double time = t + dt;
+        // double time = t + dt;
+        double time = t;
         double m = particle.mass();
 
         // Used for visualization simplicity only

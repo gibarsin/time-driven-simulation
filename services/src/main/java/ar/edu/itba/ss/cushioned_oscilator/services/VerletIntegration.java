@@ -4,39 +4,45 @@ import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
 import ar.edu.itba.ss.cushioned_oscilator.models.Vector2D;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class VerletIntegration implements PhysicsIntegration {
     PhysicsIntegration initialIntegration;
-    boolean firstIteration;
+    Map<Particle, Vector2D[]> prevPos; // Map storing for each particle it's last two positions: Position 0 is previous and 1 is previous's previous.
 
     public VerletIntegration(PhysicsIntegration initialIntegration){
         this.initialIntegration = initialIntegration;
-        this.firstIteration = true;
+        this.prevPos = new HashMap<>();
     }
 
     @Override
     public Vector2D calculateVelocity(Particle particle, double t, double dt) {
-        final Vector2D prevPosition = new Vector2D(particle.prevX(), particle.prevY());
+        //TODO: Make particle return a Vector2D of its position
+        final Vector2D currentPosition = new Vector2D(particle.x(), particle.y()); // this is r(t+dt)
+        final Vector2D prevPosition = prevPos.get(particle)[1]; // this is r(t-dt)
 
-        return calculatePosition(particle, t, dt).sub(prevPosition).div(2*dt);
+        return currentPosition.sub(prevPosition).div(2*dt); // this is v(t) and not v(t+dt)
     }
 
     @Override
     public Vector2D calculatePosition(Particle particle, double t, double dt) {
-        Particle p = particle;
 
-        if(firstIteration){
-            Vector2D prevPosition = initialIntegration.calculatePosition(particle, t, -dt);
-            p = particle.withPrevX(prevPosition.x()).withPrevY(prevPosition.y());
-            firstIteration = false;
+        if(t == 0){
+            Vector2D prev = initialIntegration.calculatePosition(particle, t, -dt);
+            prevPos.put(particle, new Vector2D[]{prev, null}); // The array now remains: [r(t-dt), null]
         }
 
-        final Vector2D currentPosition = new Vector2D(p.x(), p.y()); //TODO: Make particle return a Vector2D of its position
-        final Vector2D prevPosition = new Vector2D(p.prevX(), p.prevY());
-        final Vector2D forceFactor = new Vector2D(p.forceX(), p.forceY());
+        final Vector2D prevPosition = prevPos.get(particle)[0];
+        final Vector2D currentPosition = new Vector2D(particle.x(), particle.y()); //TODO: Make particle return a Vector2D of its position
+        final Vector2D forceFactor = new Vector2D(particle.forceX(), particle.forceY());
 
-        currentPosition.times(2);
-        forceFactor.times( (dt * dt) / (2 * p.mass()) );
+        // Change the prevPosition to previous's previous && add the current position as prevPosition
+        prevPos.put(particle, new Vector2D[]{new Vector2D(currentPosition), prevPosition}); // The array now remains: [r(t), r(t-dt)]
 
-        return currentPosition.sub(prevPosition).add(forceFactor);
+        forceFactor.times( (dt * dt) / (particle.mass()) );
+        currentPosition.times(2).sub(prevPosition).add(forceFactor);
+
+        return currentPosition;
     }
 }

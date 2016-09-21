@@ -32,20 +32,6 @@ public abstract class ParticleAbs {
 
   @Value.Default
   @Value.Auxiliary
-  public double prevX(){
-    return 0;
-  }
-
-  @Value.Default
-  @Value.Auxiliary
-  public double prevY(){
-    return 0;
-  }
-
-
-
-  @Value.Default
-  @Value.Auxiliary
   public double mass() {
     return 0;
   }
