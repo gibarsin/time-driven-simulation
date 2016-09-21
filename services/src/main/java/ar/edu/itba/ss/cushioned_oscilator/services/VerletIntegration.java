@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class VerletIntegration implements PhysicsIntegration {
     PhysicsIntegration initialIntegration;
-    Map<Particle, ParticleData> posMap; // Map storing for each particle it's last two positions: Position 0 is previous and 1 is previous's previous.
+    Map<Particle, ParticleData> posMap; // Map storing for each particle it's last two positions
 
     public VerletIntegration(PhysicsIntegration initialIntegration){
         this.initialIntegration = initialIntegration;
@@ -54,10 +54,6 @@ public class VerletIntegration implements PhysicsIntegration {
 
         public ParticleData(Vector2D prevPosition){
             this.prevPosition = prevPosition;
-        }
-        public ParticleData(Vector2D prevPosition, Vector2D prevPrev){
-            this.prevPosition = prevPosition;
-            this.prevPrev = prevPrev;
         }
 
         public Vector2D getPrevPosition() {
