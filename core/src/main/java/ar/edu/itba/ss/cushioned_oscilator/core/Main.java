@@ -1,6 +1,9 @@
 package ar.edu.itba.ss.cushioned_oscilator.core;
 
 import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
+import ar.edu.itba.ss.cushioned_oscilator.models.ParticleAbs;
+import ar.edu.itba.ss.cushioned_oscilator.services.AnalyticIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.EulerIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.VerletIntegration;
 import org.slf4j.Logger;
@@ -13,7 +16,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static ar.edu.itba.ss.cushioned_oscilator.core.Main.EXIT_CODE.*;
@@ -37,7 +42,7 @@ public class Main {
                   "\t generates an output/static.dat file with the desired parameters.\n" +
                   "* osc <path/to/static.dat> <dt>\n" +
                   "\t runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
-                  "* gen ovito <path/to/static.dat> <path/to/output.dat> : \n"+
+                  "* gen ovito <path/to/static.dat> <path/to/output.dat> <L> <W>: \n"+
                   "\t generates an output/graphics.xyz file (for Ovito) with the result of the simulation\n " +
                   "\t (<output.dat>) generated with the static file.\n";
 
@@ -150,6 +155,43 @@ public class Main {
         generateStaticDatFile(mass, r, k, gamma, tf);
 
         break;
+
+      case "ovito":
+        // get particle id
+        if (args.length != 6) {
+          System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
+          exit(BAD_N_ARGUMENTS);
+        }
+
+        final String staticFile = args[2];
+        final String outputFile = args[3];
+
+        double L = 0;
+        try {
+          L = Double.parseDouble(args[4]);
+        } catch (NumberFormatException e) {
+          LOGGER.warn("[FAIL] - <L> must be a number. Caused by: ", e);
+          System.out.println("[FAIL] - <L> argument must be a number. Try 'help' for more information.");
+          exit(BAD_ARGUMENT);
+        }
+
+        double W = 0;
+        try {
+          W = Double.parseDouble(args[5]);
+        } catch (NumberFormatException e) {
+          LOGGER.warn("[FAIL] - <W> must be a number. Caused by: ", e);
+          System.out.println("[FAIL] - <W> argument must be a number. Try 'help' for more information.");
+          exit(BAD_ARGUMENT);
+        }
+
+        generateOvitoFile(staticFile, outputFile, L, W);
+        break;
+
+      default:
+        System.out.println("[FAIL] - Invalid argument. Try 'help' for more information.");
+        exit(BAD_ARGUMENT);
+        break;
+
     }
   }
 
@@ -230,9 +272,10 @@ public class Main {
       return;
     }
 
-    final PhysicsIntegration eulerIntegration = new EulerIntegration(); //TODO: Euler should only be used for the first calculation
+    final PhysicsIntegration eulerIntegration = new EulerIntegration();
+    final PhysicsIntegration verletIntegration = new VerletIntegration(eulerIntegration);
+    final PhysicsIntegration analyticIntegration = new AnalyticIntegration(staticData.mass, staticData.k, staticData.gamma);
 
-    final PhysicsIntegration verletIntegration = new VerletIntegration(eulerIntegration); //TODO: Euler should only be used for the first calculation
 
     final CushionedOscillator cushionedOscillator = new CushionedOscillator(
             staticData.mass,
@@ -243,13 +286,248 @@ public class Main {
             verletIntegration
     );
 
-    long i = 0;
+    List<Particle> particles;
 
+    long i = 0;
     for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
       cushionedOscillator.evolveSystem();
+      if(i%10 == 0){
+        particles = new ArrayList<>();
+        particles.add(cushionedOscillator.getParticle());
+        generateOutputDatFile(particles, i);
+      }
       i++;
     }
   }
+
+  private static void generateOutputDatFile(final List<Particle> updatedParticles, final long iteration) {
+//		/* delete previous dynamic.dat file, if any */
+    final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
+
+    /* write the new output.dat file */
+    final String data = pointsToString(updatedParticles, iteration);
+
+    BufferedWriter writer = null;
+    try {
+      writer = new BufferedWriter(new FileWriter(pathToDatFile.toFile(), true));
+      writer.write(data);
+    } catch (IOException e) {
+      LOGGER.warn("An unexpected IO Exception occurred while writing the file {}. Caused by: ", pathToDatFile, e);
+      System.out.println("[FAIL] - An unexpected error occurred while writing the file '" + pathToDatFile + "'. \n" +
+              "Check the logs for more info.\n" +
+              "Aborting...");
+      exit(UNEXPECTED_ERROR);
+    } finally {
+      try {
+        // close the writer regardless of what happens...
+        if (writer != null) {
+          writer.close();
+        }
+      } catch (Exception ignored) {
+
+      }
+    }
+  }
+
+  // Used for building output.dat
+  private static String pointsToString(final List<Particle> pointsSet, long iteration) {
+    final StringBuilder sb = new StringBuilder();
+    sb.append(iteration).append('\n');
+    double vx, vy, r, g, b;
+    for (Particle point : pointsSet) {
+      vx = point.vx();
+      vy = point.vy();
+      r = 255;
+      g = 255;
+      b = 255;
+      sb.append(point.id()).append('\t')
+              // position
+              .append(point.x()).append('\t').append(point.y()).append('\t')
+              // velocity
+              .append(vx).append('\t').append(vy).append('\t')
+              // R G B colors
+              .append(r).append('\t')
+              .append(g).append('\t')
+              //.append(b).append('\n');
+              .append(b).append('\t')
+              .append(1).append('\n');
+    }
+    return sb.toString();
+  }
+
+  /**
+   *  Generate a .XYZ file which contains the following information about a particle:
+   *  - id
+   *  - X Position
+   *  - Y Position
+   *  - X Speed
+   *  - Y Speed
+   *  - R color - vx
+   *  - G color - vy
+   *  - B color - vx + vy
+   *  By default, the output file is 'graphics.xyz' which is stored in the 'data' folder.
+   * @param staticFile -
+   * @param outputFile -
+   */
+  private static void generateOvitoFile(final String staticFile, final String outputFile, double L, double W) {
+    final Path pathToStaticDatFile = Paths.get(staticFile);
+    final Path pathToOutputDatFile = Paths.get(outputFile);
+    final Path pathToGraphicsFile = Paths.get(DESTINATION_FOLDER, OVITO_FILE);
+
+    // save data to a new file
+    final File dataFolder = new File(DESTINATION_FOLDER);
+    //noinspection ResultOfMethodCallIgnored
+    dataFolder.mkdirs(); // tries to make directories for the .dat files
+
+    /* delete previous dynamic.dat file, if any */
+    if(!deleteIfExists(pathToGraphicsFile)) {
+      return;
+    }
+
+    Stream<String> staticDatStream = null;
+    Stream<String> outputDatStream = null;
+
+    try {
+      staticDatStream = Files.lines(pathToStaticDatFile);
+      outputDatStream = Files.lines(pathToOutputDatFile);
+    } catch (IOException e) {
+      LOGGER.warn("Could not read a file. Details: ", e);
+      System.out.println("Could not read one of these files: '" + pathToStaticDatFile + "' or '"
+              + pathToOutputDatFile + "'.\n" +
+              "Check the logs for a detailed info.\n" +
+              "Aborting...");
+      exit(UNEXPECTED_ERROR);
+    }
+
+    BufferedWriter writer = null;
+
+    try {
+      String stringN; // N as string
+      String iterationNum, borderParticles;
+      int N;
+      //final double L, W;
+      final Iterator<String> staticDatIterator;
+      final Iterator<String> outputDatIterator;
+      final StringBuilder sb = new StringBuilder();
+
+      final StaticData staticData = loadStaticFile(staticFile);
+
+      writer = new BufferedWriter(new FileWriter(pathToGraphicsFile.toFile()));
+      staticDatIterator = staticDatStream.iterator();
+      outputDatIterator = outputDatStream.iterator();
+
+      // Write number of particles
+      N = staticData.N;
+
+      // Create virtual particles in the borders, in order for Ovito to show the whole board
+
+      sb      // id
+              .append(N+1).append('\t')
+              // type
+                //.append(N+1).append('\t')
+              // position
+              //.append(0).append('\t').append(0).append('\t')
+              .append(-L/2).append('\t').append(-W/2).append('\t')
+              // velocity
+              .append(0).append('\t').append(0).append('\t')
+              // color: black [ r, g, b ]
+              .append(0).append('\t').append(0).append('\t').append(0).append('\t')
+              // radio
+              .append(0)
+              .append('\n');
+
+      sb      // id
+              .append(N+2).append('\t')
+              // type
+                //.append(N+2).append('\t')
+              // position
+              //.append(W).append('\t').append(0).append('\t')
+              .append(W/2).append('\t').append(-L).append('\t')
+              // velocity
+              .append(0).append('\t').append(0).append('\t')
+              // color: black [ r, g, b ]
+              .append(0).append('\t').append(0).append('\t').append(0).append('\t')
+              // radio
+              .append(0)
+              .append('\n');
+
+      sb      // id
+              .append(N+3).append('\t')
+              // type
+                //.append(N+3).append('\t')
+              // position
+              //.append(W).append('\t').append(L).append('\t')
+              .append(W/2).append('\t').append(L/2).append('\t')
+              // velocity
+              .append(0).append('\t').append(0).append('\t')
+              // color: black [ r, g, b ]
+              .append(0).append('\t').append(0).append('\t').append(0).append('\t')
+              // radio
+              .append(0)
+              .append('\n');
+
+      sb      // id
+              .append(N+4).append('\t')
+              // type
+                //.append(N+4).append('\t')
+              // position
+              //.append(0).append('\t').append(L).append('\t')
+              .append(-W/2).append('\t').append(L/2).append('\t')
+              // velocity
+              .append(0).append('\t').append(0).append('\t')
+              // color: black [ r, g, b ]
+              .append(0).append('\t').append(0).append('\t').append(0).append('\t')
+              // radio
+              .append(0)
+              .append('\n');
+
+      stringN = String.valueOf(N+4);
+
+      borderParticles = sb.toString();
+
+      while(outputDatIterator.hasNext()){
+        // Write amount of particles (N)
+        writer.write(stringN);
+        writer.newLine();
+
+        // Write iteration number
+        iterationNum = outputDatIterator.next();
+        writer.write(iterationNum);
+        writer.newLine();
+
+                /*
+                  Write particle information in this order
+                  Particle_Id     X_Pos	Y_Pos   X_Vel   Y_Vel R G B
+                */
+        for(int i=0; i<N; i++){
+          writer.write(outputDatIterator.next() + "\n");
+        }
+
+        // Write border particles
+        writer.write(borderParticles);
+
+
+      }
+    } catch(final IOException e) {
+      LOGGER.warn("Could not write to '{}'. Caused by: ", pathToGraphicsFile, e);
+      System.out.println("Could not write to '" + pathToGraphicsFile + "'." +
+              "\nCheck the logs for a detailed info.\n" +
+              "Aborting...");
+      exit(UNEXPECTED_ERROR);
+    } finally {
+      try {
+        if(writer != null) {
+          writer.close();
+        }
+        staticDatStream.close();
+        outputDatStream.close();
+      } catch (final IOException ignored) {
+
+      }
+    }
+  }
+
+
 
 
   /**
@@ -275,6 +553,7 @@ public class Main {
     private double k;
     private double gamma;
     private double tf;
+    private final int N = 1;
   }
 
   private static StaticData loadStaticFile(final String filePath) {

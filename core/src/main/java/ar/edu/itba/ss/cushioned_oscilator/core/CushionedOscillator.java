@@ -59,12 +59,15 @@ class CushionedOscillator {
             .withVy(newVelocity.y());
 
     systemTime += dt;
-
-    System.out.println(particle.x());
+    return;
   }
 
   private double getParticleForceX() {
     return -k * particle.x() - gamma * particle.vx();
+  }
+
+  public Particle getParticle(){
+    return this.particle;
   }
 
 

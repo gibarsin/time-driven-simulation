@@ -30,11 +30,17 @@ public abstract class ParticleAbs {
   @Value.Auxiliary
   public abstract double y();
 
+  @Value.Default
   @Value.Auxiliary
-  public abstract double prevX();
+  public double prevX(){
+    return 0;
+  }
 
+  @Value.Default
   @Value.Auxiliary
-  public abstract double prevY();
+  public double prevY(){
+    return 0;
+  }
 
 
 
