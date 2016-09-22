@@ -9,7 +9,6 @@ class CushionedOscillator {
   private final double gamma;
   private double systemTime;
   private final double dt;
-  private final double beta;
   private Particle particle;
 
   // The class which will calculate the new conditions
@@ -30,7 +29,7 @@ class CushionedOscillator {
     this.gamma = gamma;
     this.dt = dt;
     this.physicsIntegration = physicsIntegration;
-    this.beta = gamma / (2 * mass);
+    double beta = gamma / (2 * mass);
     this.systemTime = 0;
 
 
@@ -43,10 +42,10 @@ class CushionedOscillator {
             .build();
   }
 
-  public void evolveSystem() {
+  void evolveSystem() {
     //TODO: Delete immutability for Particles
 
-    particle = particle.withForceX(getParticleForceX());
+    particle = particle.withForceX(getParticleForceX()); //TODO: Changing
 
     // It's IMPORTANT to maintain the order in which calculatePosition and calculateVelocity are called, since velocity depends on position.
     final Vector2D newPosition = physicsIntegration.calculatePosition(particle, systemTime, dt);
@@ -69,14 +68,13 @@ class CushionedOscillator {
 //            .withVy(newVelocity.y());
 
     systemTime += dt;
-    return;
   }
 
   private double getParticleForceX() {
     return -k * particle.x() - gamma * particle.vx();
   }
 
-  public Particle getParticle(){
+  Particle getParticle(){
     return this.particle;
   }
 

@@ -2,7 +2,6 @@ package ar.edu.itba.ss.cushioned_oscilator.core;
 
 import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
-import ar.edu.itba.ss.cushioned_oscilator.models.ParticleAbs;
 import ar.edu.itba.ss.cushioned_oscilator.services.AnalyticIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.EulerIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.VerletIntegration;
@@ -271,11 +270,10 @@ public class Main {
     if(!deleteIfExists(pathToGraphicsFile)){
       return;
     }
-
+    
     final PhysicsIntegration eulerIntegration = new EulerIntegration();
     final PhysicsIntegration verletIntegration = new VerletIntegration(eulerIntegration);
     final PhysicsIntegration analyticIntegration = new AnalyticIntegration(staticData.mass, staticData.k, staticData.gamma);
-
 
     final CushionedOscillator cushionedOscillator = new CushionedOscillator(
             staticData.mass,

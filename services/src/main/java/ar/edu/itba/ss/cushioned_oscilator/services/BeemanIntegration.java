@@ -8,46 +8,66 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BeemanIntegration implements PhysicsIntegration{
-    PhysicsIntegration initialIntegration;
-    Map<Particle, ParticleData> accMap; // Map storing for each particle it's last two accelerations
+    private final PhysicsIntegration initialIntegration;
+    private final Map<Particle, Vector2D> prevAccelerations; //Store particle and previous acceleration
 
-    public BeemanIntegration(PhysicsIntegration initialIntegration){
+    public BeemanIntegration(final PhysicsIntegration initialIntegration) {
         this.initialIntegration = initialIntegration;
-        this.accMap = new HashMap<>();
+        this.prevAccelerations = new HashMap<>();
     }
 
 
     @Override
-    public Vector2D calculateVelocity(Particle particle, double t, double dt) {
-        return null;
+    public Vector2D calculateVelocity(final Particle particle, final double t, final double dt) {
+        final Vector2D predictedVelocity = calculatePredictedVelocity(particle, dt);
+        final Vector2D nextAcceleration = null; //TODO: Calculate next acceleration
+        final Vector2D correctedVelocity = calculateCorrectedVelocity(particle, nextAcceleration, dt);
+
+        return correctedVelocity;
+    }
+
+    private Vector2D calculatePredictedVelocity(final Particle particle, final double dt) {
+        final Vector2D currentVelocity = new Vector2D(particle.vx(), particle.vy());
+        final Vector2D accelerationFactor = new Vector2D(particle.forceX(), particle.forceY())
+                .times(dt).times(3/2).div(particle.mass());
+        final Vector2D prevAccelerationFactor = prevAccelerations.get(particle)
+                .times(dt)
+                .div(2);
+
+        accelerationFactor.sub(prevAccelerationFactor);
+
+        return currentVelocity.add(accelerationFactor);
+    }
+
+
+    private Vector2D calculateCorrectedVelocity(final Particle particle, final Vector2D nextAcceleration, final double dt) {
+        final Vector2D currentVelocity = new Vector2D(particle.vx(), particle.vy());
+        final Vector2D accelerationFactor = new Vector2D(particle.forceX(), particle.forceY())
+                .times(dt).times(2/3).div(particle.mass());
+        final Vector2D prevAccelerationFactor = prevAccelerations.get(particle).times(dt).times(1/12);
+
+        nextAcceleration.times(dt).times(5/12);
+        return currentVelocity.add(nextAcceleration).add(accelerationFactor).sub(prevAccelerationFactor);
     }
 
     @Override
-    public Vector2D calculatePosition(Particle particle, double t, double dt) {
-        return null;
-    }
+    public Vector2D calculatePosition(final Particle particle, final double t, final double dt) {
+        final Vector2D currentPosition = new Vector2D(particle.x(), particle.y());
+        final Vector2D velocityFactor = new Vector2D(particle.vx(), particle.vy());
+        final Vector2D accelerationFactor = new Vector2D(particle.forceX(), particle.forceY());
+        final Vector2D prevAccelerationFactor = prevAccelerations.get(particle)
+                .times(Math.pow(dt,2))
+                .div(6);
 
-    private static class ParticleData{
-        Vector2D prevAcceleration;
-        Vector2D prevPrev;
+        accelerationFactor
+                .times(Math.pow(dt, 2) * 2/3)
+                .div(particle.mass())
+                .sub(prevAccelerationFactor);
+        velocityFactor.times(dt);
 
-        public ParticleData(Vector2D prevAcceleration){
-            this.prevAcceleration = prevAcceleration;
-        }
-
-        public Vector2D getPrevAcc() {
-            return prevAcceleration;
-        }
-
-        public Vector2D getPrevPrev() {
-            return prevPrev;
-        }
-
-        public ParticleData updatePrevPositions(Vector2D prevPosition, Vector2D prevPrev) {
-            this.prevAcceleration = prevPosition;
-            this.prevPrev = prevPrev;
-            return this;
-        }
+        return currentPosition
+                .add(velocityFactor)
+                .add(accelerationFactor);
     }
 
 }
