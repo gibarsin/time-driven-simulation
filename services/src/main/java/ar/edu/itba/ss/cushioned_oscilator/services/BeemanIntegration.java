@@ -7,7 +7,7 @@ import ar.edu.itba.ss.cushioned_oscilator.models.Vector2D;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BeemanIntegration implements PhysicsIntegration{
+public class BeemanIntegration implements PhysicsIntegration {
     private final PhysicsIntegration initialIntegration;
     private final Map<Particle, Vector2D> prevAccelerations; //Store particle and previous acceleration
 

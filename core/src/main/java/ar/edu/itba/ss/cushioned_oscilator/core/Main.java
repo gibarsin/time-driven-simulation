@@ -1,10 +1,8 @@
 package ar.edu.itba.ss.cushioned_oscilator.core;
 
-import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
 import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorAnalyticIntegration;
-import ar.edu.itba.ss.cushioned_oscilator.services.EulerIntegration;
-import ar.edu.itba.ss.cushioned_oscilator.services.VerletIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorEulerIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -270,22 +268,8 @@ public class Main {
     if(!deleteIfExists(pathToGraphicsFile)){
       return;
     }
-    
-    final PhysicsIntegration eulerIntegration = new EulerIntegration();
-    final PhysicsIntegration verletIntegration = new VerletIntegration(eulerIntegration);
-//    final PhysicsIntegration analyticIntegration = new OscillatorAnalyticIntegration(staticData.mass, staticData.k, staticData.gamma);
 
-//    final CushionedOscillator cushionedOscillator = new CushionedOscillator(
-//            staticData.mass,
-//            staticData.r,
-//            staticData.k,
-//            staticData.gamma,
-//            dt,
-////            verletIntegration
-//            analyticIntegration
-//    );
-
-    final OscillatorAnalyticIntegration oscillator = new OscillatorAnalyticIntegration(
+    final OscillatorEulerIntegration oscillator = new OscillatorEulerIntegration(
             staticData.mass,
             staticData.r,
             staticData.k,
