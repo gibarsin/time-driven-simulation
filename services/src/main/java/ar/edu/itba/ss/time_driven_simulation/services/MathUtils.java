@@ -1,4 +1,4 @@
-package ar.edu.itba.ss.cushioned_oscilator.services;
+package ar.edu.itba.ss.time_driven_simulation.services;
 
 class MathUtils {
   static int factorial(final int n) {

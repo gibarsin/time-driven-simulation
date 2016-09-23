@@ -1,7 +1,7 @@
-package ar.edu.itba.ss.cushioned_oscilator.interfaces;
+package ar.edu.itba.ss.time_driven_simulation.interfaces;
 
-import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
-import ar.edu.itba.ss.cushioned_oscilator.models.Vector2D;
+import ar.edu.itba.ss.time_driven_simulation.models.Particle;
+import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 
 public interface PhysicsIntegration {
     Vector2D calculatePosition(Particle particle, double t, double dt);

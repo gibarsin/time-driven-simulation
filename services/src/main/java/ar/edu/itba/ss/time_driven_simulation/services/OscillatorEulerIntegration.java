@@ -1,8 +1,7 @@
-package ar.edu.itba.ss.cushioned_oscilator.services;
+package ar.edu.itba.ss.time_driven_simulation.services;
 
-import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
-import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
-import ar.edu.itba.ss.cushioned_oscilator.models.Vector2D;
+import ar.edu.itba.ss.time_driven_simulation.models.Particle;
+import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

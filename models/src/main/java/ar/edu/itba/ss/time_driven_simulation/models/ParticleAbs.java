@@ -1,4 +1,4 @@
-package ar.edu.itba.ss.cushioned_oscilator.models;
+package ar.edu.itba.ss.time_driven_simulation.models;
 
 import org.immutables.builder.Builder;
 import org.immutables.value.Value;

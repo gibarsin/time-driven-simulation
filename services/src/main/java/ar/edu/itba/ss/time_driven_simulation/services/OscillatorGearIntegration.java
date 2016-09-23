@@ -1,6 +1,6 @@
-package ar.edu.itba.ss.cushioned_oscilator.services;
+package ar.edu.itba.ss.time_driven_simulation.services;
 
-import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
+import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 
 import static java.lang.Math.pow;
 

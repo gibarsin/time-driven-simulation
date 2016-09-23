@@ -1,7 +1,8 @@
-package ar.edu.itba.ss.cushioned_oscilator.core;
+package ar.edu.itba.ss.time_driven_simulation.core;
 
-import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
-import ar.edu.itba.ss.cushioned_oscilator.services.*;
+import ar.edu.itba.ss.time_driven_simulation.models.Particle;
+import ar.edu.itba.ss.time_driven_simulation.services.*;
+import ar.edu.itba.ss.time_driven_simulation.services.OscillatorGearIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static ar.edu.itba.ss.cushioned_oscilator.core.Main.EXIT_CODE.*;
+import static ar.edu.itba.ss.time_driven_simulation.core.Main.EXIT_CODE.*;
 
 public class Main {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);

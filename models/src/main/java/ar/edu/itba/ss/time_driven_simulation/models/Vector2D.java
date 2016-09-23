@@ -1,4 +1,4 @@
-package ar.edu.itba.ss.cushioned_oscilator.models;
+package ar.edu.itba.ss.time_driven_simulation.models;
 
 public class Vector2D {
   private double x;

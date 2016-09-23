@@ -9,7 +9,7 @@ Then, run
 ## Execution
 To run the program, from the root folder
 
-    $ java -jar core/target/cushioned-oscilator.jar <arguments>
+    $ java -jar core/target/time-driven-simulation.jar <arguments>
     
 ## Simulation
 
