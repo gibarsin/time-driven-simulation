@@ -3,6 +3,7 @@ package ar.edu.itba.ss.cushioned_oscilator.core;
 import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
 import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorAnalyticIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorEulerIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorVerletIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,7 +270,7 @@ public class Main {
       return;
     }
 
-    final OscillatorEulerIntegration oscillator = new OscillatorEulerIntegration(
+    final OscillatorVerletIntegration oscillator = new OscillatorVerletIntegration(
             staticData.mass,
             staticData.r,
             staticData.k,
