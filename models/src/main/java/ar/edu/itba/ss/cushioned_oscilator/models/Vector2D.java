@@ -42,7 +42,7 @@ public class Vector2D {
     return x;
   }
 
-  public void setX(final int x) {
+  public void setX(final double x) {
     this.x = x;
   }
 
@@ -50,7 +50,7 @@ public class Vector2D {
     return y;
   }
 
-  public void setY(final int y) {
+  public void setY(final double y) {
     this.y = y;
   }
 

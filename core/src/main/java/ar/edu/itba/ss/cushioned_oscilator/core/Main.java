@@ -2,6 +2,7 @@ package ar.edu.itba.ss.cushioned_oscilator.core;
 
 import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
 import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorAnalyticIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorBeemanIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorEulerIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorVerletIntegration;
 import org.slf4j.Logger;
@@ -270,7 +271,7 @@ public class Main {
       return;
     }
 
-    final OscillatorVerletIntegration oscillator = new OscillatorVerletIntegration(
+    final OscillatorBeemanIntegration oscillator = new OscillatorBeemanIntegration(
             staticData.mass,
             staticData.r,
             staticData.k,
