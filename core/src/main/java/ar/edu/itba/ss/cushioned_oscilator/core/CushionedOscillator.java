@@ -14,7 +14,6 @@ class CushionedOscillator {
   // The class which will calculate the new conditions
   private final PhysicsIntegration physicsIntegration;
 
-  //TODO: Receive the class that will calculate the new conditions
   /**
    * Set the initial conditions of the damped oscillator
    * @param mass the mass of the particle attached to the system

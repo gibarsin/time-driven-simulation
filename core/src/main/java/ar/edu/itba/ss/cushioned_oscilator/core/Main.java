@@ -2,7 +2,7 @@ package ar.edu.itba.ss.cushioned_oscilator.core;
 
 import ar.edu.itba.ss.cushioned_oscilator.interfaces.PhysicsIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.models.Particle;
-import ar.edu.itba.ss.cushioned_oscilator.services.AnalyticIntegration;
+import ar.edu.itba.ss.cushioned_oscilator.services.OscillatorAnalyticIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.EulerIntegration;
 import ar.edu.itba.ss.cushioned_oscilator.services.VerletIntegration;
 import org.slf4j.Logger;
@@ -273,25 +273,34 @@ public class Main {
     
     final PhysicsIntegration eulerIntegration = new EulerIntegration();
     final PhysicsIntegration verletIntegration = new VerletIntegration(eulerIntegration);
-    final PhysicsIntegration analyticIntegration = new AnalyticIntegration(staticData.mass, staticData.k, staticData.gamma);
+//    final PhysicsIntegration analyticIntegration = new OscillatorAnalyticIntegration(staticData.mass, staticData.k, staticData.gamma);
 
-    final CushionedOscillator cushionedOscillator = new CushionedOscillator(
+//    final CushionedOscillator cushionedOscillator = new CushionedOscillator(
+//            staticData.mass,
+//            staticData.r,
+//            staticData.k,
+//            staticData.gamma,
+//            dt,
+////            verletIntegration
+//            analyticIntegration
+//    );
+
+    final OscillatorAnalyticIntegration oscillator = new OscillatorAnalyticIntegration(
             staticData.mass,
             staticData.r,
             staticData.k,
             staticData.gamma,
-            dt,
-            verletIntegration
+            dt
     );
 
     List<Particle> particles;
 
     long i = 0;
     for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
-      cushionedOscillator.evolveSystem();
+      oscillator.evolveSystem();
       if(i%10 == 0){
         particles = new ArrayList<>();
-        particles.add(cushionedOscillator.getParticle());
+        particles.add(oscillator.getParticle());
         generateOutputDatFile(particles, i);
       }
       i++;
