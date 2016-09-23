@@ -89,8 +89,8 @@ public class OscillatorVerletIntegration {
         final Vector2D velocityFactor = new Vector2D(particle.vx(), particle.vy());
         final Vector2D forceFactor = new Vector2D(particle.forceX(), particle.forceY());
 
-        velocityFactor.times(dt);
-        forceFactor.times( Math.pow(dt, 2) / (2 * particle.mass()) );
+        velocityFactor.times(-dt);
+        forceFactor.times( Math.pow(-dt, 2) / (2 * particle.mass()) );
 
         // O(dt^3) is not taken into account
         // Notice that current time (t) is never used, so may be we can erase it
