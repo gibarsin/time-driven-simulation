@@ -35,11 +35,11 @@ public class Main {
   private static final String HELP_TEXT =
           "Cushioned Oscillator Simulation Implementation.\n" +
                   "Arguments: \n" +
-                  "* gen staticdat <m> <r> <k> <gamma> <tf> : \n" +
+                  "* gen staticdat <N> <m> <r> <k> <gamma> <tf> : \n" +
                   "\t generates an output/static.dat file with the desired parameters.\n" +
                   "* osc <path/to/static.dat> <dt>\n" +
                   "\t runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
-                  "* gen ovito <path/to/static.dat> <path/to/output.dat> <L> <W>: \n"+
+                  "* gen ovito <path/to/static.dat> <path/to/output.dat> <W> <L>: \n"+
                   "\t generates an output/graphics.xyz file (for Ovito) with the result of the simulation\n " +
                   "\t (<output.dat>) generated with the static file.\n";
 
@@ -99,14 +99,23 @@ public class Main {
 
     switch (args[1]) {
       case "staticdat":
-        if (args.length != 7) {
+        if (args.length != 8) {
           System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
           exit(BAD_N_ARGUMENTS);
         }
 
+        int N = 0;
+        try {
+          N = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+          LOGGER.warn("[FAIL] - <N> must be a number. Caused by: ", e);
+          System.out.println("[FAIL] - <N> argument must be a number. Try 'help' for more information.");
+          exit(BAD_ARGUMENT);
+        }
+
         double mass = 0;
         try {
-          mass = Double.parseDouble(args[2]);
+          mass = Double.parseDouble(args[3]);
         } catch (NumberFormatException e) {
           LOGGER.warn("[FAIL] - <m> must be a number. Caused by: ", e);
           System.out.println("[FAIL] - <m> argument must be a number. Try 'help' for more information.");
@@ -115,7 +124,7 @@ public class Main {
 
         double r = 0;
         try {
-          r = Double.parseDouble(args[3]);
+          r = Double.parseDouble(args[4]);
         } catch (NumberFormatException e) {
           LOGGER.warn("[FAIL] - <r> must be a number. Caused by: ", e);
           System.out.println("[FAIL] - <r> argument must be a number. Try 'help' for more information.");
@@ -124,7 +133,7 @@ public class Main {
 
         double k = 0;
         try {
-          k = Double.parseDouble(args[4]);
+          k = Double.parseDouble(args[5]);
         } catch (NumberFormatException e) {
           LOGGER.warn("[FAIL] - <k> must be a number. Caused by: ", e);
           System.out.println("[FAIL] - <k> argument must be a number. Try 'help' for more information.");
@@ -133,7 +142,7 @@ public class Main {
 
         double gamma = 0;
         try {
-          gamma = Double.parseDouble(args[5]);
+          gamma = Double.parseDouble(args[6]);
         } catch (NumberFormatException e) {
           LOGGER.warn("[FAIL] - <gamma> must be a number. Caused by: ", e);
           System.out.println("[FAIL] - <gamma> argument must be a number. Try 'help' for more information.");
@@ -142,14 +151,14 @@ public class Main {
 
         double tf = 0;
         try {
-          tf = Double.parseDouble(args[6]);
+          tf = Double.parseDouble(args[7]);
         } catch (NumberFormatException e) {
           LOGGER.warn("[FAIL] - <tf> must be a number. Caused by: ", e);
           System.out.println("[FAIL] - <tf> argument must be a number. Try 'help' for more information.");
           exit(BAD_ARGUMENT);
         }
 
-        generateStaticDatFile(mass, r, k, gamma, tf);
+        generateStaticDatFile(N, mass, r, k, gamma, tf);
 
         break;
 
@@ -192,7 +201,7 @@ public class Main {
     }
   }
 
-  private static void generateStaticDatFile(final double mass, final double r, final double k, final double gamma,
+  private static void generateStaticDatFile(final int N, final double mass, final double r, final double k, final double gamma,
                                             final double tf) {
     // save data to a new file
     final File dataFolder = new File(DESTINATION_FOLDER);
@@ -209,6 +218,8 @@ public class Main {
     BufferedWriter writer = null;
     try {
       writer = new BufferedWriter(new FileWriter(pathToDatFile.toFile()));
+      writer.write(String.valueOf(N));
+      writer.write("\n");
       writer.write(String.valueOf(mass));
       writer.write("\n");
       writer.write(String.valueOf(r));
@@ -248,8 +259,8 @@ public class Main {
 
     final StaticData staticData = loadStaticFile(args[1]);
 
-    if(staticData.mass <= 0 || staticData.k < 0 || staticData.tf < 0) {
-      System.out.println("[FAIL] - The following must not happen: mass < 0 or k < 0 or tf < 0.\n" +
+    if(staticData.N <= 0  || staticData.mass <= 0 || staticData.k < 0 || staticData.tf < 0) {
+      System.out.println("[FAIL] - The following must not happen: N<0 or mass < 0 or k < 0 or tf < 0.\n" +
               "Please check the input files.");
       exit(BAD_ARGUMENT);
     }
@@ -269,24 +280,29 @@ public class Main {
       return;
     }
 
-    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
-            staticData.mass,
-            staticData.r,
-            staticData.k,
-            staticData.gamma,
-            dt
-    );
+//    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
+//            staticData.mass,
+//            staticData.r,
+//            staticData.k,
+//            staticData.gamma,
+//            dt
+//    );
+
+
+    final SolarSystem solarSystem = new SolarSystem(dt);
 
     List<Particle> particles;
 
     long i = 0;
     for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
-      oscillator.evolveSystem();
       if(i%10 == 0){
         particles = new ArrayList<>();
-        particles.add(oscillator.getParticle());
+        //particles.add(oscillator.getParticle());
+        particles.addAll(solarSystem.getParticles());
         generateOutputDatFile(particles, i);
       }
+      //oscillator.evolveSystem();
+      solarSystem.evolveSystem();
       i++;
     }
   }
@@ -360,7 +376,7 @@ public class Main {
    * @param staticFile -
    * @param outputFile -
    */
-  private static void generateOvitoFile(final String staticFile, final String outputFile, double L, double W) {
+  private static void generateOvitoFile(final String staticFile, final String outputFile, double W, double L) {
     final Path pathToStaticDatFile = Paths.get(staticFile);
     final Path pathToOutputDatFile = Paths.get(outputFile);
     final Path pathToGraphicsFile = Paths.get(DESTINATION_FOLDER, OVITO_FILE);
@@ -418,7 +434,7 @@ public class Main {
                 //.append(N+1).append('\t')
               // position
               //.append(0).append('\t').append(0).append('\t')
-              .append(-L/2).append('\t').append(-W/2).append('\t')
+              .append(-W/2).append('\t').append(-L/2).append('\t')
               // velocity
               .append(0).append('\t').append(0).append('\t')
               // color: black [ r, g, b ]
@@ -433,7 +449,7 @@ public class Main {
                 //.append(N+2).append('\t')
               // position
               //.append(W).append('\t').append(0).append('\t')
-              .append(W/2).append('\t').append(-L).append('\t')
+              .append(W/2).append('\t').append(-L/2).append('\t')
               // velocity
               .append(0).append('\t').append(0).append('\t')
               // color: black [ r, g, b ]
@@ -544,7 +560,7 @@ public class Main {
     private double k;
     private double gamma;
     private double tf;
-    private final int N = 1;
+    private int N;
   }
 
   private static StaticData loadStaticFile(final String filePath) {
@@ -558,6 +574,8 @@ public class Main {
 
     try (final Stream<String> staticStream = Files.lines(staticFile.toPath())) {
       final Iterator<String> staticFileLines = staticStream.iterator();
+
+      staticData.N = Integer.valueOf(staticFileLines.next());
 
       // get mass
       staticData.mass = Double.valueOf(staticFileLines.next());
