@@ -14,10 +14,9 @@ public class SolarSystem {
 
     private Particle sun;
     private Particle earth;
-
-    //TODO
-    //private Particle mars;
+    private Particle mars;
     //private Particle ship;
+
     private Particle[] solarSystem;
 
     public SolarSystem(final double dt){
@@ -37,12 +36,12 @@ public class SolarSystem {
                 .radio(6371 * 1000)
                 .build();
 
-//        this.mars = Particle.builder(0.831483493435295E8 * 1000, -1.914579540822006E8 * 1000)
-//                .mass(6.4185E23)
-//                .vx(23.637912321314047 * 1000)
-//                .vy(11.429021426712032 * 1000)
-//                .radio(3389.9 * 1000)
-//                .build();
+        this.mars = Particle.builder(0.831483493435295E8 * 1000, -1.914579540822006E8 * 1000)
+                .mass(6.4185E23)
+                .vx(23.637912321314047 * 1000)
+                .vy(11.429021426712032 * 1000)
+                .radio(3389.9 * 1000)
+                .build();
 
 // TODO: Determine ship initial conditions
 //        this.ship = Particle.builder(0.831483493435295E8 * 1000, -1.914579540822006E8 * 1000)
@@ -54,7 +53,7 @@ public class SolarSystem {
 
         // TODO this.solarSystem = new Particle[]{sun, earth, mars, ship};
 
-        this.solarSystem = new Particle[]{sun, earth};
+        this.solarSystem = new Particle[]{sun, earth, mars};
 
         // Initialice Forces over the Particles
         Vector2D[] forces = new Vector2D[solarSystem.length];
