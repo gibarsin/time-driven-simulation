@@ -33,7 +33,7 @@ public class OscillatorVerletIntegration {
         particle = particle.withForceX(getForceX()); // We use the f(0) to calculate r(-dt)
 
         // Initialize Map with -dt position (before simulation starts)
-        final Vector2D prev = initialPosition(); //TODO: Possible BUG, not initialising ForceX & ForceY!
+        final Vector2D prev = initialPosition();
         posMap.put(particle, new ParticleData(prev)); // prev: r(t-dt)
     }
 

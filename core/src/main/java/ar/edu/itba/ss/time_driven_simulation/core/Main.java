@@ -280,16 +280,18 @@ public class Main {
       return;
     }
 
-//    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
-//            staticData.mass,
-//            staticData.r,
-//            staticData.k,
-//            staticData.gamma,
-//            dt
-//    );
+    //TODO: To run solarSystem, comment 1), 2) && 3) and uncomment the line under each one of these.
+    // To run a different oscillator, simply change the instance 1)
 
-
-    final SolarSystem solarSystem = new SolarSystem(dt);
+    // 1)
+    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
+            staticData.mass,
+            staticData.r,
+            staticData.k,
+            staticData.gamma,
+            dt
+    );
+    //final SolarSystem solarSystem = new SolarSystem(dt);
 
     List<Particle> particles;
 
@@ -297,12 +299,14 @@ public class Main {
     for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
       if(i%10 == 0){
         particles = new ArrayList<>();
-        //particles.add(oscillator.getParticle());
-        particles.addAll(solarSystem.getParticles());
+        // 2)
+        particles.add(oscillator.getParticle());
+        //particles.addAll(solarSystem.getParticles());
         generateOutputDatFile(particles, i);
       }
-      //oscillator.evolveSystem();
-      solarSystem.evolveSystem();
+      // 3)
+      oscillator.evolveSystem();
+      //solarSystem.evolveSystem();
       i++;
     }
   }

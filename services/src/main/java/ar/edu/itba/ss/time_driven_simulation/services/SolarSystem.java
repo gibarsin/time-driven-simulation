@@ -6,6 +6,8 @@ import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.*;
+
 public class SolarSystem {
     private double dt;
     private double systemTime = 0;
@@ -15,7 +17,7 @@ public class SolarSystem {
     private Particle sun;
     private Particle earth;
     private Particle mars;
-    //private Particle ship;
+    private Particle ship;
 
     private Particle[] solarSystem;
 
@@ -43,19 +45,19 @@ public class SolarSystem {
                 .radio(3389.9 * 1000)
                 .build();
 
-// TODO: Determine ship initial conditions
-//        this.ship = Particle.builder(0.831483493435295E8 * 1000, -1.914579540822006E8 * 1000)
-//                .mass(6.4185E23)
-//                .vx(23.637912321314047 * 1000)
-//                .vy(11.429021426712032 * 1000)
-//                .radio(3389.9 * 1000)
-//                .build();
+        // Determine ship initial conditions
+        double alpha = atan2(earth.y() - sun.y() , earth.x() - sun.x()); // Angle between the Sun and Earth
+        double distanceToEarth = 1500 * 1000;
+        this.ship = Particle.builder(earth.x() + cos(alpha) * distanceToEarth, earth.y() + sin(alpha) * distanceToEarth)
+                .mass(2E5)
+                .vx(earth.vx() + 7120 * cos(alpha))
+                .vy(earth.vy() + 7120 * sin(alpha))
+                .radio(1000) // Random radio
+                .build();
 
-        // TODO this.solarSystem = new Particle[]{sun, earth, mars, ship};
+        this.solarSystem = new Particle[]{sun, earth, mars, ship};
 
-        this.solarSystem = new Particle[]{sun, earth, mars};
-
-        // Initialice Forces over the Particles
+        // Calculate the initial forces over each particle of the system
         Vector2D[] forces = new Vector2D[solarSystem.length];
         for(int i=0; i< solarSystem.length; i++){
             forces[i] = totalForce(solarSystem[i]);
@@ -63,31 +65,17 @@ public class SolarSystem {
         posMap = new HashMap<>();
         Vector2D prev;
 
+        // Assign f(0) to all particles and save r(-dt) in positionMap (Same as in Verlet's Algorithm)
         for(int i=0; i< solarSystem.length; i++){
             solarSystem[i] = solarSystem[i].withForceX(forces[i].x()).withForceY(forces[i].y());
             prev = initialPosition(solarSystem[i]);
             posMap.put(solarSystem[i], new ParticleData(prev)); // prev: r(t-dt)
         }
 
-        //IMPORTANT NOTE: After this cycle do not use sun, earth, etc. local variables since they have old
-        // content (Because they are inmutables)
+        // NOTE: After this cycle do not use sun, earth, etc. local variables since they have old
+        // content (Because they are inmutables). Use solarSystem[] instead.
 
-            //TODO DELETE:
-//        // Initialize Map with -dt position (before simulation starts)
-//        posMap = new HashMap<>();
-//        Vector2D prev;
-//        prev = initialPosition(sun);
-//        posMap.put(sun, new ParticleData(prev)); // prev: r(t-dt)
-//        prev = initialPosition(earth);
-//        posMap.put(earth, new ParticleData(prev)); // prev: r(t-dt)
 
-            // END DELETE
-
-        // TODO
-//        prev = initialPosition(mars);
-//        posMap.put(mars, new ParticleData(prev)); // prev: r(t-dt)
-//        prev = initialPosition(ship);
-//        posMap.put(ship, new ParticleData(prev)); // prev: r(t-dt)
     }
 
     public void evolveSystem(){
@@ -99,15 +87,6 @@ public class SolarSystem {
         for (int i=0; i<solarSystem.length; i++){
             p1 = solarSystem[i];
             force = totalForce(p1);
-//            force = new Vector2D(0,0);
-//
-//            // Add the gravitational force of all other particles in the system
-//            for(int j=0; j<solarSystem.length; j++){
-//                if (i != j) {
-//                    p2 = solarSystem[j];
-//                    force.add(calculateForce(p1, p2));
-//                }
-//            }
             p1 = p1.withForceX(force.x()).withForceY(force.y());
             final Vector2D newPosition = calculatePosition(p1);
             p1 = p1.withX(newPosition.x()).withY(newPosition.y());
@@ -129,12 +108,12 @@ public class SolarSystem {
             if (!p1.equals(p2)) {
                 force.add(calculateForce(p1, p2));
             }
+
         }
         return force;
     }
 
     public Vector2D calculateForce(Particle p1, Particle p2) {
-        // TODO: Calculate force for every couple of particles // Determine Force X, Y Components
         double distancePow2 = Math.pow(p2.x()-p1.x(), 2) +  Math.pow(p2.y()-p1.y(), 2);
         double forceModule = G * p1.mass() * p2.mass() / distancePow2;
         double alpha = Math.atan2(p2.y() - p1.y() , p2.x() - p1.x());
@@ -144,7 +123,8 @@ public class SolarSystem {
 
     public Vector2D calculatePosition(Particle particle) {
         final ParticleData data = posMap.get(particle);
-        final Vector2D prevPosition = data.getPrevPosition();
+        Vector2D prevPosition = data.getPrevPosition();
+
         final Vector2D currentPosition = new Vector2D(particle.x(), particle.y());
         final Vector2D forceFactor = new Vector2D(particle.forceX(), particle.forceY());
 
