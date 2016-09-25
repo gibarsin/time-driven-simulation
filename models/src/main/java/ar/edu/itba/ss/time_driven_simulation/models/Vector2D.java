@@ -42,6 +42,7 @@ public class Vector2D {
     return x;
   }
 
+  // +++xcheck: smells wrong....
   public void setX(final double x) {
     this.x = x;
   }
