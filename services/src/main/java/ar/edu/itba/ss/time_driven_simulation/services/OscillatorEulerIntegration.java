@@ -1,11 +1,12 @@
 package ar.edu.itba.ss.time_driven_simulation.services;
 
+import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class OscillatorEulerIntegration {
+public final class OscillatorEulerIntegration implements Oscillator {
     private static final Logger LOGGER = LoggerFactory.getLogger(OscillatorEulerIntegration.class);
 
     private final double k;

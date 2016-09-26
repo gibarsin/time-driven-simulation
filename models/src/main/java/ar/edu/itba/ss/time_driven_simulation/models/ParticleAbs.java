@@ -20,6 +20,10 @@ public abstract class ParticleAbs {
 
   @Value.Default
   @Value.Auxiliary
+  public ParticleType type() { return ParticleType.COMMON; }
+
+  @Value.Default
+  @Value.Auxiliary
   public boolean isColliding() { return false; }
 
   @Builder.Parameter
