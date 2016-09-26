@@ -102,7 +102,7 @@ public class OscillatorGearIntegration {
   }
 
   private double getAcceleration() {
-    return (-k * r[0] - gamma * r[1]) / particle.mass();
+    return (-k * rPredicted[0] - gamma * rPredicted[1]) / particle.mass();
   }
 
   public Particle getParticle() {

@@ -26,7 +26,7 @@ public class OscillatorAnalyticIntegration {
         this.gamma = gamma;
         this.dt = dt;
         beta = gamma / (2 * mass);
-        this.systemTime = 0;
+        this.systemTime = dt;
 
 
         // Create the particle with position, mass and initial velocity
@@ -40,7 +40,6 @@ public class OscillatorAnalyticIntegration {
 
     public void evolveSystem() {
         final double newX = calculatePosition();
-
 
         particle = particle.withX(newX);
         systemTime += dt;
