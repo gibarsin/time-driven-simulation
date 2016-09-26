@@ -2,6 +2,7 @@ package ar.edu.itba.ss.time_driven_simulation.core;
 
 import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
+import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 import ar.edu.itba.ss.time_driven_simulation.services.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,13 +23,32 @@ import static ar.edu.itba.ss.time_driven_simulation.core.Main.EXIT_CODE.*;
 
 public class Main {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+
+  // File Management
   private static final String DESTINATION_FOLDER = "output";
   private static final String STATIC_FILE = "static.dat";
   private static final String OUTPUT_FILE = "output.dat";
   private static final String OVITO_FILE = "graphics.xyz";
+  private static final String SS_REPORT_FILE = "ss_report.dat";
+
+  // Real Constants
+  private static final int HOURS_PER_DAY = 24;
+  private static final int SECONDS_PER_HOUR = 3600;
+  private static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
+  private static final double KM_TO_M = 1000.0;
+
+  // Solar System Constants
   private static final int SOLAR_SYSTEM_N = 4;
   private static final double SOLAR_SYSTEM_L = 1e12;
   private static final double SOLAR_SYSTEM_W = 1e12;
+  private static final double DAYS_TO_TAKE_OFF = 578.732;
+  private static final double SHIP_TAKE_OFF_V0 = 8 * KM_TO_M;
+  // To use default, that is, tangential angle Earth-Sun, use 'null'
+  private static final Vector2D SHIP_TAKE_OFF_ANGLE = null;
+  // To use own angle, make your own vector. X and Y components will be used for vx and vy respectively
+  // Vector will be converted to a versor to be used.
+//  private static final Vector2D SHIP_TAKE_OFF_ANGLE = new Vector2D(-1, 0);
+
   private enum OutputType {
     SOLAR_SYSTEM,
     COMMON
@@ -38,7 +58,7 @@ public class Main {
           "Arguments: \n" +
           "* gen staticdat <N> <m> <r> <k> <gamma> <tf> : \n" +
           "     generates an output/static.dat file with the desired parameters.\n" +
-          "* osc <type> <path/to/static.dat> <dt>\n" +
+          "* osc <path/to/static.dat> <type> <dt>\n" +
           "     runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
           "     <type> can be 'analytic', 'verlet', 'beeman', 'gear'.\n" +
           "* ss <dt> <ft>\n" +
@@ -107,23 +127,8 @@ public class Main {
       exit(BAD_N_ARGUMENTS);
     }
 
-    double dt = 0;
-    try {
-      dt = Double.parseDouble(args[1]);
-    } catch (NumberFormatException e) {
-      LOGGER.warn("[FAIL] - <dt> must be a number. Caused by: ", e);
-      System.out.println("[FAIL] - <dt> argument must be a number. Try 'help' for more information.");
-      exit(BAD_ARGUMENT);
-    }
-
-    double ft = 0;
-    try {
-      ft = Double.parseDouble(args[2]);
-    } catch (NumberFormatException e) {
-      LOGGER.warn("[FAIL] - <ft> must be a number. Caused by: ", e);
-      System.out.println("[FAIL] - <ft> argument must be a number. Try 'help' for more information.");
-      exit(BAD_ARGUMENT);
-    }
+    final double dt = parseAsDouble(args[1], "<dt>");
+    final double ft = parseAsDouble(args[2], "<ft>");
 
     // Generate static.dat file for this system to be used to generate ovito file in a future
     generateStaticDatFile(SOLAR_SYSTEM_N, -1, -1, -1, -1, -1, SOLAR_SYSTEM_W, SOLAR_SYSTEM_L);
@@ -140,25 +145,72 @@ public class Main {
 
     final SolarSystem solarSystem = new SolarSystem(dt);
 
-    List<Particle> particles;
-
     long i = 0;
+    double timeToTookOff = daysToSeconds(DAYS_TO_TAKE_OFF);
+
+    double currentTime = 0;
+    while (currentTime < timeToTookOff) {
+      evolve(solarSystem, i++);
+      currentTime +=dt;
+    }
+
+    solarSystem.takeOff(SHIP_TAKE_OFF_V0, SHIP_TAKE_OFF_ANGLE);
+
     for (double systemTime = 0; systemTime < ft; systemTime += dt) {
-      if (i%10 == 0) { // print system after 10 dt units
-        particles = new ArrayList<>();
-        particles.addAll(solarSystem.getParticles());
-        generateOutputDatFile(OutputType.SOLAR_SYSTEM, particles, i);
-      }
-      solarSystem.evolveSystem();
+      evolve(solarSystem, i);
       if (solarSystem.shipCrashed()) {
         System.out.println("[REACHED] - Ship landed on " + solarSystem.shipLandedTo());
-        particles = new ArrayList<>();
-        particles.addAll(solarSystem.getParticles());
-        generateOutputDatFile(OutputType.SOLAR_SYSTEM, particles, i);
+        generateOutputDatFile(OutputType.SOLAR_SYSTEM, solarSystem.getParticles(), i);
         break;
       }
       i++;
     }
+
+    generateReportFile(solarSystem.getMinDistanceToMarsSSState());
+  }
+
+  /**
+   * Parses as double the given string.
+   * Exits if an error is encountered
+   * @param s string to be parsed
+   * @param varErrMsg variable name to be displayed if an error raise
+   * @return the parsed double
+   */
+  private static double parseAsDouble(final String s, final String varErrMsg) {
+    try {
+      return Double.parseDouble(s);
+    } catch (NumberFormatException e) {
+      LOGGER.warn("[FAIL] - " + varErrMsg + " must be a number. Caused by: ", e);
+      System.out.println("[FAIL] - " + varErrMsg + " argument must be a number. Try 'help' for more information.");
+      exit(BAD_ARGUMENT);
+      // should not get here
+      return -1;
+    }
+  }
+
+  private static void evolve(final SolarSystem solarSystem, final long i) {
+    if (i%10 == 0) { // print system after 10 dt units
+      generateOutputDatFile(OutputType.SOLAR_SYSTEM, solarSystem.getParticles(), i);
+    }
+    solarSystem.evolveSystem();
+  }
+
+  private static double daysToSeconds(final double days) {
+    return days * SECONDS_PER_DAY;
+  }
+
+  private static void generateReportFile(final SolarSystem.SolarSystemState minDistanceToMarsSSState) {
+    /* delete previous file, if any */
+    final Path pathToFile = Paths.get(DESTINATION_FOLDER, SS_REPORT_FILE);
+
+    if(!deleteIfExists(pathToFile)) {
+      return;
+    }
+
+    final String data = minDistanceToMarsSSState.toString();
+
+    /* write the new file */
+    writeFile(pathToFile, data, false);
   }
 
   private static void generateCase(final String[] args) {
@@ -453,7 +505,9 @@ public class Main {
               // radio
               .append(particle.radio()).append('\t')
               // type
-              .append(particle.type()).append('\n');
+              .append(particle.type()).append('\t')
+              // age in days
+              .append(particle.ageInDays()).append('\n');
     }
 
     // Edge particles
@@ -470,8 +524,9 @@ public class Main {
             // radio
             .append(0).append('\t')
             // type
-            .append("EDGE")
-            .append('\n');
+            .append("EDGE").append('\t')
+            // age in days
+            .append(0).append('\n');
 
     sb      // id
             .append(N+2).append('\t')
@@ -485,7 +540,8 @@ public class Main {
             .append(0).append('\t')
             // type
             .append("EDGE").append('\t')
-            .append('\n');
+            // age in days
+            .append(0).append('\n');
 
     sb      // id
             .append(N+3).append('\t')
@@ -499,7 +555,8 @@ public class Main {
             .append(0).append('\t')
             // type
             .append("EDGE").append('\t')
-            .append('\n');
+            // age in days
+            .append(0).append('\n');
 
     sb      // id
             .append(N+4).append('\t')
@@ -513,7 +570,8 @@ public class Main {
             .append(0).append('\t')
             // type
             .append("EDGE").append('\t')
-            .append('\n');
+            // age in days
+            .append(0).append('\n');
 
     return sb.toString();
   }
