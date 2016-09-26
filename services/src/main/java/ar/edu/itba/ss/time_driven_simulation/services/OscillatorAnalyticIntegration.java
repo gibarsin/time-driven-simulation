@@ -10,6 +10,7 @@ public class OscillatorAnalyticIntegration {
     private double systemTime;
     private final double dt;
     private Particle particle;
+    private final double beta;
 
 
     /**
@@ -24,7 +25,7 @@ public class OscillatorAnalyticIntegration {
         this.k = k;
         this.gamma = gamma;
         this.dt = dt;
-        double beta = gamma / (2 * mass);
+        beta = gamma / (2 * mass);
         this.systemTime = 0;
 
 
@@ -40,6 +41,7 @@ public class OscillatorAnalyticIntegration {
     public void evolveSystem() {
         final double newX = calculatePosition();
 
+
         particle = particle.withX(newX);
         systemTime += dt;
     }
@@ -48,8 +50,8 @@ public class OscillatorAnalyticIntegration {
         final double mass = particle.mass();
 
         // Used for visualization simplicity only
-        final double aux1 = exp(- ( gamma/( 2 *mass) ) * systemTime);
-        final double aux2 = sqrt( (k/mass) - gamma * gamma / (4 * pow(mass,2)) );
+        final double aux1 = exp(-beta * systemTime);
+        final double aux2 = sqrt((k / mass) - Math.pow(beta, 2));
 
         return aux1 * cos(aux2 * systemTime);
     }

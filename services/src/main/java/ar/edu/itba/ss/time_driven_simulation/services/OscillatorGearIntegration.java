@@ -61,10 +61,10 @@ public class OscillatorGearIntegration {
   private void rInitialize() {
     r[0] = particle.x();
     r[1] = particle.vx();
-    r[2] = (-k * r[0] - gamma * r[1]) / particle.mass();
-    r[3] = (-k * r[1] - gamma * r[2]) / particle.mass();
-    r[4] = (-k * r[2] - gamma * r[3]) / particle.mass();
-    r[5] = (-k * r[3] - gamma * r[4]) / particle.mass();
+
+    for(int i = 2; i < ORDER + 1; i++) {
+      r[i] = (-k * r[i - 2] - gamma * r[i - 1]) / particle.mass();
+    }
   }
 
   //Methods down here show the evolution of the system

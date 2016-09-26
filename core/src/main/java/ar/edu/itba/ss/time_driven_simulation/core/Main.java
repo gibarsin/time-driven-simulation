@@ -292,7 +292,7 @@ public class Main {
     // To run a different oscillator, simply change the instance 1)
 
     // 1)
-    final OscillatorBeemanIntegration oscillator = new OscillatorBeemanIntegration(
+    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
             staticData.mass,
             staticData.r,
             staticData.k,
