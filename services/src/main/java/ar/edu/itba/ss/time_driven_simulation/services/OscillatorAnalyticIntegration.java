@@ -1,10 +1,11 @@
 package ar.edu.itba.ss.time_driven_simulation.services;
 
+import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 
 import static java.lang.Math.*;
 
-public class OscillatorAnalyticIntegration {
+public class OscillatorAnalyticIntegration implements Oscillator {
     private final double k;
     private final double gamma;
     private double systemTime;

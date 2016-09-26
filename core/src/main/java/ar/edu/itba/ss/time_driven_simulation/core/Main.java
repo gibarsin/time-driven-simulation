@@ -1,8 +1,8 @@
 package ar.edu.itba.ss.time_driven_simulation.core;
 
+import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 import ar.edu.itba.ss.time_driven_simulation.services.*;
-import ar.edu.itba.ss.time_driven_simulation.services.OscillatorGearIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,24 +24,30 @@ public class Main {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
   private static final String DESTINATION_FOLDER = "output";
   private static final String STATIC_FILE = "static.dat";
-  private static final String DYNAMIC_FILE = "dynamic.dat";
   private static final String OUTPUT_FILE = "output.dat";
-  private static final String DATA_FOR_GRAPHICS_FILE = "i_t_fp_pre_temp.csv";
   private static final String OVITO_FILE = "graphics.xyz";
-  private static final String TIME_TO_EQUILIBRIUM_FILE = "time_to_eq.csv";
-  private static final long MAX_TIME_AFTER_EQUILIBRIUM = 100;
-  private static final int SYSTEM_PARTICLES_INDEX = 0;
-  private static final int KINETIC_ENERGY_INDEX = 1;
+  private static final int SOLAR_SYSTEM_PARTICLES = 4;
+  private enum OutputType {
+    SOLAR_SYSTEM,
+    COMMON
+  }
   private static final String HELP_TEXT =
           "Cushioned Oscillator Simulation Implementation.\n" +
-                  "Arguments: \n" +
-                  "* gen staticdat <N> <m> <r> <k> <gamma> <tf> : \n" +
-                  "\t generates an output/static.dat file with the desired parameters.\n" +
-                  "* osc <path/to/static.dat> <dt>\n" +
-                  "\t runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
-                  "* gen ovito <path/to/static.dat> <path/to/output.dat> <W> <L>: \n"+
-                  "\t generates an output/graphics.xyz file (for Ovito) with the result of the simulation\n " +
-                  "\t (<output.dat>) generated with the static file.\n";
+          "Arguments: \n" +
+          "* gen staticdat <N> <m> <r> <k> <gamma> <tf> : \n" +
+          "     generates an output/static.dat file with the desired parameters.\n" +
+          "* osc <type> <path/to/static.dat> <dt>\n" +
+          "     runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
+          "     <type> can be 'analytic', 'verlet', 'beeman', 'gear'.\n" +
+          "* ss <dt> <ft>\n" +
+          "     Simulation of a space ship taking off with Mars as destination." +
+          "     <dt> is the delta time represented with each iteration, in seconds." +
+          "     <ft> is the final time that the system will be simulated.\n" +
+          "     Only The Sun, Earth, Mars and the spaceship are represented.\n" +
+          "     **Note** A 'static.dat' file is generated automatically.\n" +
+          "* gen ovito <path/to/static.dat> <path/to/output.dat>: \n"+
+          "     generates an output/graphics.xyz file (for Ovito) with the result of the simulation\n " +
+          "     (<output.dat>) generated with the static file.\n";
 
 
   // Exit Codes
@@ -81,6 +87,9 @@ public class Main {
       case "osc":
         cushionedOscillator(args);
         break;
+      case "ss":
+        solarSystem(args);
+        break;
       default:
         System.out.println("[FAIL] - Invalid argument. Try 'help' for more information.");
         exit(BAD_ARGUMENT);
@@ -88,6 +97,59 @@ public class Main {
     }
 
     System.out.println("[DONE]");
+  }
+
+  private static void solarSystem(final String[] args) {
+    if (args.length != 3) {
+      System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
+      exit(BAD_N_ARGUMENTS);
+    }
+
+    double dt = 0;
+    try {
+      dt = Double.parseDouble(args[1]);
+    } catch (NumberFormatException e) {
+      LOGGER.warn("[FAIL] - <dt> must be a number. Caused by: ", e);
+      System.out.println("[FAIL] - <dt> argument must be a number. Try 'help' for more information.");
+      exit(BAD_ARGUMENT);
+    }
+
+    double ft = 0;
+    try {
+      ft = Double.parseDouble(args[2]);
+    } catch (NumberFormatException e) {
+      LOGGER.warn("[FAIL] - <ft> must be a number. Caused by: ", e);
+      System.out.println("[FAIL] - <ft> argument must be a number. Try 'help' for more information.");
+      exit(BAD_ARGUMENT);
+    }
+
+    // Generate static.dat file for this system to be used to generate ovito file in a future
+    generateStaticDatFile(SOLAR_SYSTEM_PARTICLES, -1, -1, -1, -1, -1, 1e12, 1e12);
+
+    // Create file for first iteration
+    final File dataFolder = new File(DESTINATION_FOLDER);
+    dataFolder.mkdirs(); // tries to make directories for the .dat files
+
+    final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
+
+    if(!deleteIfExists(pathToDatFile)) {
+      return;
+    }
+
+    final SolarSystem solarSystem = new SolarSystem(dt);
+
+    List<Particle> particles;
+
+    long i = 0;
+    for (double systemTime = 0; systemTime < ft; systemTime += dt) {
+      if (i%10 == 0) { // print system after 10 dt units
+        particles = new ArrayList<>();
+        particles.addAll(solarSystem.getParticles());
+        generateOutputDatFile(OutputType.SOLAR_SYSTEM, particles, i);
+      }
+      solarSystem.evolveSystem();
+      i++;
+    }
   }
 
   private static void generateCase(final String[] args) {
@@ -158,13 +220,13 @@ public class Main {
           exit(BAD_ARGUMENT);
         }
 
-        generateStaticDatFile(N, mass, r, k, gamma, tf);
+        generateStaticDatFile(N, mass, r, k, gamma, tf, 0, 7);
 
         break;
 
       case "ovito":
         // get particle id
-        if (args.length != 6) {
+        if (args.length != 4) {
           System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
           exit(BAD_N_ARGUMENTS);
         }
@@ -172,25 +234,7 @@ public class Main {
         final String staticFile = args[2];
         final String outputFile = args[3];
 
-        double L = 0;
-        try {
-          L = Double.parseDouble(args[4]);
-        } catch (NumberFormatException e) {
-          LOGGER.warn("[FAIL] - <L> must be a number. Caused by: ", e);
-          System.out.println("[FAIL] - <L> argument must be a number. Try 'help' for more information.");
-          exit(BAD_ARGUMENT);
-        }
-
-        double W = 0;
-        try {
-          W = Double.parseDouble(args[5]);
-        } catch (NumberFormatException e) {
-          LOGGER.warn("[FAIL] - <W> must be a number. Caused by: ", e);
-          System.out.println("[FAIL] - <W> argument must be a number. Try 'help' for more information.");
-          exit(BAD_ARGUMENT);
-        }
-
-        generateOvitoFile(staticFile, outputFile, L, W);
+        generateOvitoFile(staticFile, outputFile);
         break;
 
       default:
@@ -201,8 +245,14 @@ public class Main {
     }
   }
 
-  private static void generateStaticDatFile(final int N, final double mass, final double r, final double k, final double gamma,
-                                            final double tf) {
+  private static void generateStaticDatFile(final int N,
+                                            final double mass,
+                                            final double r,
+                                            final double k,
+                                            final double gamma,
+                                            final double tf,
+                                            final double W,
+                                            final double L) {
     // save data to a new file
     final File dataFolder = new File(DESTINATION_FOLDER);
     dataFolder.mkdirs(); // tries to make directories for the .dat files
@@ -214,50 +264,29 @@ public class Main {
       return;
     }
 
+    final StringBuilder sb = new StringBuilder();
+    sb      .append(N).append(System.lineSeparator())
+            .append(mass).append(System.lineSeparator())
+            .append(r).append(System.lineSeparator())
+            .append(k).append(System.lineSeparator())
+            .append(gamma).append(System.lineSeparator())
+            .append(tf).append(System.lineSeparator())
+            .append(W).append(System.lineSeparator())
+            .append(L).append(System.lineSeparator());
+
     /* write the new static.dat file */
-    BufferedWriter writer = null;
-    try {
-      writer = new BufferedWriter(new FileWriter(pathToDatFile.toFile()));
-      writer.write(String.valueOf(N));
-      writer.write("\n");
-      writer.write(String.valueOf(mass));
-      writer.write("\n");
-      writer.write(String.valueOf(r));
-      writer.write("\n");
-      writer.write(String.valueOf(k));
-      writer.write("\n");
-      writer.write(String.valueOf(gamma));
-      writer.write("\n");
-      writer.write(String.valueOf(tf));
-      writer.write("\n");
-
-    } catch (IOException e) {
-      LOGGER.warn("An unexpected IO Exception occurred while writing the file {}. Caused by: ", pathToDatFile, e);
-      System.out.println("[FAIL] - An unexpected error occurred while writing the file '" + pathToDatFile + "'. \n" +
-              "Check the logs for more info.\n" +
-              "Aborting...");
-      exit(UNEXPECTED_ERROR);
-    } finally {
-      try {
-        // close the writer regardless of what happens...
-        if (writer != null) {
-          writer.close();
-        }
-      } catch (Exception ignored) {
-
-      }
-    }
+    writeFile(pathToDatFile, sb.toString(), false);
   }
 
   private static void cushionedOscillator(final String[] args) {
-    if (args.length != 3) {
+    if (args.length != 4) {
       System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
       exit(BAD_N_ARGUMENTS);
     }
 
     double dt = 0;
     try {
-      dt = Double.parseDouble(args[2]);
+      dt = Double.parseDouble(args[3]);
     } catch (NumberFormatException e) {
       LOGGER.warn("[FAIL] - <dt> must be a number. Caused by: ", e);
       System.out.println("[FAIL] - <dt> argument must be a number. Try 'help' for more information.");
@@ -273,33 +302,22 @@ public class Main {
       exit(BAD_ARGUMENT);
     }
 
+    final Oscillator oscillator = pickOscilator(staticData, dt, args[2]);
+
+    if (oscillator == null) {
+      exit(UNEXPECTED_ERROR);
+    }
+
     // Create file for first iteration
     final File dataFolder = new File(DESTINATION_FOLDER);
     dataFolder.mkdirs(); // tries to make directories for the .dat files
 
     /* delete previous dynamic.dat file, if any */
     final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
-    final Path pathToGraphicsFile = Paths.get(DESTINATION_FOLDER, DATA_FOR_GRAPHICS_FILE);
 
     if(!deleteIfExists(pathToDatFile)) {
       return;
     }
-    if(!deleteIfExists(pathToGraphicsFile)){
-      return;
-    }
-
-    //TODO: To run solarSystem, comment 1), 2) && 3) and uncomment the line under each one of these.
-    // To run a different oscillator, simply change the instance 1)
-
-    // 1)
-    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
-            staticData.mass,
-            staticData.r,
-            staticData.k,
-            staticData.gamma,
-            dt
-    );
-    //final SolarSystem solarSystem = new SolarSystem(dt);
 
     List<Particle> particles;
 
@@ -307,32 +325,90 @@ public class Main {
     for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
       if(i%10 == 0){ // print system after 10 dt units
         particles = new ArrayList<>();
-        // 2)
         particles.add(oscillator.getParticle());
-        //particles.addAll(solarSystem.getParticles());
-        generateOutputDatFile(particles, i);
+        generateOutputDatFile(OutputType.COMMON, particles, i);
       }
-      // 3)
       oscillator.evolveSystem();
-      //solarSystem.evolveSystem();
       i++;
     }
   }
 
-  private static void generateOutputDatFile(final List<Particle> updatedParticles, final long iteration) {
-//		/* delete previous dynamic.dat file, if any */
+  private static Oscillator pickOscilator(final StaticData staticData, final double dt, final String arg) {
+    switch (arg) {
+      case "analytic":
+        return new OscillatorAnalyticIntegration(
+                staticData.mass,
+                staticData.r,
+                staticData.k,
+                staticData.gamma,
+                dt
+        );
+      case "verlet":
+        return new OscillatorVerletIntegration(
+                staticData.mass,
+                staticData.r,
+                staticData.k,
+                staticData.gamma,
+                dt
+        );
+      case "beeman":
+        return new OscillatorBeemanIntegration(
+                staticData.mass,
+                staticData.r,
+                staticData.k,
+                staticData.gamma,
+                dt
+        );
+      case "gear":
+        return new OscillatorGearIntegration(
+                staticData.mass,
+                staticData.r,
+                staticData.k,
+                staticData.gamma,
+                dt
+        );
+      default:
+        LOGGER.warn("[FAIL] - <type> must be valid.");
+        System.out.println("[FAIL] - <type> must be valid. Try 'help' for more information.");
+        exit(BAD_ARGUMENT);
+        break;
+    }
+
+    return null;
+  }
+
+  private static void generateOutputDatFile(final OutputType outputType,
+                                            final List<Particle> particles,
+                                            final long iteration) {
     final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
 
-    /* write the new output.dat file */
-    final String data = pointsToString(updatedParticles, iteration);
+    final String data;
+    switch (outputType) {
+      case SOLAR_SYSTEM:
+//        data = serializeSolarSystem(particles, iteration);
+        data = serializeParticles(particles, iteration);
+        break;
+      default:
+        data = serializeParticles(particles, iteration);
+        break;
+    }
 
+    /* write the new output.dat file */
+    writeFile(pathToDatFile, data, true);
+  }
+
+  private static String serializeSolarSystem(final List<Particle> particles, final long iteration) {
+    return null;
+  }
+
+  private static void writeFile(final Path pathToFile, final String data, final boolean append) {
     BufferedWriter writer = null;
     try {
-      writer = new BufferedWriter(new FileWriter(pathToDatFile.toFile(), true));
+      writer = new BufferedWriter(new FileWriter(pathToFile.toFile(), append));
       writer.write(data);
     } catch (IOException e) {
-      LOGGER.warn("An unexpected IO Exception occurred while writing the file {}. Caused by: ", pathToDatFile, e);
-      System.out.println("[FAIL] - An unexpected error occurred while writing the file '" + pathToDatFile + "'. \n" +
+      LOGGER.warn("An unexpected IO Exception occurred while writing the file {}. Caused by: ", pathToFile, e);
+      System.out.println("[FAIL] - An unexpected error occurred while writing the file '" + pathToFile + "'. \n" +
               "Check the logs for more info.\n" +
               "Aborting...");
       exit(UNEXPECTED_ERROR);
@@ -349,7 +425,7 @@ public class Main {
   }
 
   // Used for building output.dat
-  private static String pointsToString(final List<Particle> pointsSet, long iteration) {
+  private static String serializeParticles(final List<Particle> pointsSet, long iteration) {
     final StringBuilder sb = new StringBuilder();
     sb.append(iteration).append('\n');
     double vx, vy, r, g, b;
@@ -388,7 +464,7 @@ public class Main {
    * @param staticFile -
    * @param outputFile -
    */
-  private static void generateOvitoFile(final String staticFile, final String outputFile, double W, double L) {
+  private static void generateOvitoFile(final String staticFile, final String outputFile) {
     final Path pathToStaticDatFile = Paths.get(staticFile);
     final Path pathToOutputDatFile = Paths.get(outputFile);
     final Path pathToGraphicsFile = Paths.get(DESTINATION_FOLDER, OVITO_FILE);
@@ -424,19 +500,19 @@ public class Main {
       String stringN; // N as string
       String iterationNum, borderParticles;
       int N;
-      //final double L, W;
-      final Iterator<String> staticDatIterator;
+      final double L, W;
       final Iterator<String> outputDatIterator;
       final StringBuilder sb = new StringBuilder();
 
       final StaticData staticData = loadStaticFile(staticFile);
 
       writer = new BufferedWriter(new FileWriter(pathToGraphicsFile.toFile()));
-      staticDatIterator = staticDatStream.iterator();
       outputDatIterator = outputDatStream.iterator();
 
       // Write number of particles
       N = staticData.N;
+      W = staticData.W;
+      L = staticData.L;
 
       // Create virtual particles in the borders, in order for Ovito to show the whole board
 
@@ -567,12 +643,14 @@ public class Main {
   }
 
   private static class StaticData {
+    private int N;
     private double mass;
     private double r;
     private double k;
     private double gamma;
     private double tf;
-    private int N;
+    private double W;
+    private double L;
   }
 
   private static StaticData loadStaticFile(final String filePath) {
@@ -599,6 +677,10 @@ public class Main {
       staticData.gamma = Double.valueOf(staticFileLines.next());
 
       staticData.tf = Double.valueOf(staticFileLines.next());
+
+      staticData.W = Double.valueOf(staticFileLines.next());
+
+      staticData.L = Double.valueOf(staticFileLines.next());
 
 
     } catch (final IOException e) {
