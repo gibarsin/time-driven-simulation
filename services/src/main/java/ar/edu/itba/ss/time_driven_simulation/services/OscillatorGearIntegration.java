@@ -6,7 +6,9 @@ import static java.lang.Math.pow;
 
 public class OscillatorGearIntegration {
   // Variables related to the order of Gear Predictor Corrector
-  private static final int ORDER = 5; //Change this parameter to change the order of the algorithm
+  // Change this parameter to change the order of the algorithm
+  // You'll also have to change the order of the alpha values
+  private static final int ORDER = 5;
   private static final int[] factorial = new int[ORDER + 1];
   private static final double[] alpha = new double[ORDER + 1];
   private final double[] r;
@@ -56,8 +58,6 @@ public class OscillatorGearIntegration {
     this.rPredicted = new double[ORDER + 1];
   }
 
-  //TODO: Research if this can be done in a loop from ORDER > 2
-  //TODO: Check if this is ok
   private void rInitialize() {
     r[0] = particle.x();
     r[1] = particle.vx();
@@ -80,7 +80,7 @@ public class OscillatorGearIntegration {
     for(int i = ORDER; i >= 0; i--) {
       rPredicted[i] = 0.0;
       for(int j = i, k = 0; j < ORDER + 1; j++, k++) {
-        rPredicted[i] += r[j] * pow(dt, k) / factorial[k];
+        rPredicted[i] += (r[j] * pow(dt, k) / factorial[k]);
       }
     }
   }

@@ -255,7 +255,15 @@ public class Main {
       exit(BAD_N_ARGUMENTS);
     }
 
-    final double dt = Double.parseDouble(args[2]);
+    double dt = 0;
+    try {
+      dt = Double.parseDouble(args[2]);
+    } catch (NumberFormatException e) {
+      LOGGER.warn("[FAIL] - <dt> must be a number. Caused by: ", e);
+      System.out.println("[FAIL] - <dt> argument must be a number. Try 'help' for more information.");
+      exit(BAD_ARGUMENT);
+    }
+
 
     final StaticData staticData = loadStaticFile(args[1]);
 
@@ -284,7 +292,7 @@ public class Main {
     // To run a different oscillator, simply change the instance 1)
 
     // 1)
-    final OscillatorGearIntegration oscillator = new OscillatorGearIntegration(
+    final OscillatorBeemanIntegration oscillator = new OscillatorBeemanIntegration(
             staticData.mass,
             staticData.r,
             staticData.k,
@@ -297,7 +305,7 @@ public class Main {
 
     long i = 0;
     for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
-      if(i%10 == 0){
+      if(i%10 == 0){ // print system after 10 dt units
         particles = new ArrayList<>();
         // 2)
         particles.add(oscillator.getParticle());

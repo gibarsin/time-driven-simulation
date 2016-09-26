@@ -24,7 +24,19 @@ public class OscillatorBeemanIntegration {
                 .mass(mass)
                 .vx(initialVx)
                 .build();
-        this.prevAcceleration = getForceX(r, initialVx).div(mass);
+        this.prevAcceleration = getPrevForce(particle).div(particle.mass());
+    }
+
+    private Vector2D getPrevForce(final Particle particle) {
+        final double fx = getPreviousForceComponent(particle.mass(), particle.x(), particle.vx());
+        final double fy = getPreviousForceComponent(particle.mass(), particle.y(), particle.vy());
+        return new Vector2D(fx, fy);
+    }
+
+    private double getPreviousForceComponent(final double m, final double r, final double v) {
+        final double theta = k * dt - gamma;
+        final double sigma = k * Math.pow(dt, 2) / (2*m);
+        return (-k * r + theta * v)/(1 - sigma + theta * dt/m);
     }
 
     public void evolveSystem() {
@@ -53,7 +65,7 @@ public class OscillatorBeemanIntegration {
         final Vector2D prevAccelerationFactor = new Vector2D(prevAcceleration);
 
         nextAccelerationFactor.div(3).times(dt);
-        currAccelerationFactor.times(5/6).times(dt);
+        currAccelerationFactor.div(6).times(5).times(dt);
         prevAccelerationFactor.div(6).times(dt);
 
         return currentVelocity
