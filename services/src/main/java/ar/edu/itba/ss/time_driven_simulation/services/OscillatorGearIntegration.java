@@ -1,10 +1,11 @@
 package ar.edu.itba.ss.time_driven_simulation.services;
 
+import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 
 import static java.lang.Math.pow;
 
-public class OscillatorGearIntegration {
+public class OscillatorGearIntegration implements Oscillator {
   // Variables related to the order of Gear Predictor Corrector
   // Change this parameter to change the order of the algorithm
   // You'll also have to change the order of the alpha values

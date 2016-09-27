@@ -1,12 +1,13 @@
 package ar.edu.itba.ss.time_driven_simulation.services;
 
+import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class OscillatorVerletIntegration {
+public class OscillatorVerletIntegration implements Oscillator {
     private final Map<Particle, ParticleData> posMap; // Map storing for each particle it's last two positions
     private final double k;
     private final double gamma;
