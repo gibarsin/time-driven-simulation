@@ -20,6 +20,10 @@ public abstract class ParticleAbs {
 
   @Value.Default
   @Value.Auxiliary
+  public ParticleType type() { return ParticleType.COMMON; }
+
+  @Value.Default
+  @Value.Auxiliary
   public boolean isColliding() { return false; }
 
   @Builder.Parameter
@@ -66,6 +70,14 @@ public abstract class ParticleAbs {
     return 0;
   }
 
+  @Value.Default
+  @Value.Auxiliary
+  public double ageInDays() {
+    return 0;
+  }
+
+
+
 
 
   @Value.Check
@@ -105,6 +117,7 @@ public abstract class ParticleAbs {
   public String toString() {
     return "Point{"
             + "id=" + id()
+            + ", type= " + type()
             + ", x=" + x()
             + ", y=" + y()
             + ", radio=" + radio()
@@ -115,6 +128,7 @@ public abstract class ParticleAbs {
             + ", speed=" + speed()
             + ", mass=" + mass()
             + ", kinetic energy=" + kineticEnergy()
+            + ", age in days=" + ageInDays()
             + "}";
   }
 
