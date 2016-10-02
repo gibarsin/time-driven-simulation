@@ -67,7 +67,7 @@ public class SolarSystem {
 
     addParticlesToSolarSystem(blueBodies);
 
-    minDistanceToMarsSSState = new SolarSystemState(particles.values(), Double.MAX_VALUE, totalSimulatedTime);
+    minDistanceToMarsSSState = new SolarSystemState(particles.values(), Double.MAX_VALUE, Double.MAX_VALUE, totalSimulatedTime);
 
     // NOTE: After this cycle do not use sun, earth, etc. local variables since they have old
     // content (Because they are inmutables). Use solarSystem[] instead.
@@ -195,8 +195,37 @@ public class SolarSystem {
 
       distance = distanceBetween(ship, particle);
       if (particle.type() == ParticleType.MARS && minDistanceToMarsSSState.distanceToMars > distance) {
+        final Particle earth = particles.get(ParticleType.EARTH);
+        double distanceToEarth = distanceBetween(ship, earth);
         minDistanceToMarsSSState = new SolarSystemState(new HashSet<>(particles.values()),
-                distance, totalSimulatedTime);
+                distance, distanceToEarth, totalSimulatedTime);
+      }
+      if (distance <= 0) {
+        shipLandedTo = particle.type();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean shipCrashedEarth() {
+    final Particle ship = particles.get(ParticleType.SHIP);
+    if (ship == null) { // there is no ship or it hasn't taken off yet
+      return false;
+    }
+
+    double distance;
+    for (Particle particle : particles.values()) {
+      if (ship.equals(particle)) {
+        continue;
+      }
+
+      distance = distanceBetween(ship, particle);
+      if (particle.type() == ParticleType.EARTH && minDistanceToMarsSSState.distanceToEarth > distance) {
+        final Particle mars = particles.get(ParticleType.MARS);
+        double distanceToMars = distanceBetween(ship, mars);
+        minDistanceToMarsSSState = new SolarSystemState(new HashSet<>(particles.values()),
+                distanceToMars, distance, totalSimulatedTime);
       }
       if (distance <= 0) {
         shipLandedTo = particle.type();
@@ -233,6 +262,34 @@ public class SolarSystem {
                     .mass(2E5)
                     .vx(earth.vx() + SHIP_ORBITAL_V0 * tgVersor.x() + shipTakeOffV0 * ownAngle.x())
                     .vy(earth.vy() + SHIP_ORBITAL_V0 * tgVersor.y() + shipTakeOffV0 * ownAngle.y())
+                    .radio(SHIP_RADIUS) // Random radio
+                    .type(ParticleType.SHIP)
+                    .build();
+
+    addParticlesToSolarSystem(ship);
+  }
+
+  public void takeOffFromMars(final double shipTakeOffV0, final Vector2D shipTakeOffAngle) {
+    final Particle mars = particles.get(ParticleType.MARS);
+    final Particle sun = particles.get(ParticleType.SUN);
+
+    // Determine ship's initial conditions
+    double sunEarthDistance = Math.sqrt(Math.pow(mars.x()-sun.x(), 2) + Math.pow(mars.y()-sun.y(), 2));
+    Vector2D normalVersor = new Vector2D(mars.x()-sun.x(), mars.y()-sun.y());
+    normalVersor.div(sunEarthDistance); // Normalize Vector
+    // if there is a user defined vector => use that. If not, use default, that is, tangential vector earth-sun
+    Vector2D tgVersor = new Vector2D(- normalVersor.y(), normalVersor.x());
+    Vector2D ownAngle = shipTakeOffAngle == null ?
+            tgVersor : shipTakeOffAngle.div(shipTakeOffAngle.norm2()); // vector to versor
+
+    final double distanceToPlanet = -(mars.radio() + SHIP_DISTANCE_TO_EARTH);
+
+    final Particle ship =
+            Particle.builder( mars.x() + (distanceToPlanet) * normalVersor.x(),
+                    mars.y() + (distanceToPlanet) * normalVersor.y() )
+                    .mass(2E5)
+                    .vx(mars.vx() + SHIP_ORBITAL_V0 * tgVersor.x() + shipTakeOffV0 * ownAngle.x())
+                    .vy(mars.vy() + SHIP_ORBITAL_V0 * tgVersor.y() + shipTakeOffV0 * ownAngle.y())
                     .radio(SHIP_RADIUS) // Random radio
                     .type(ParticleType.SHIP)
                     .build();
@@ -290,13 +347,16 @@ public class SolarSystem {
   public static class SolarSystemState {
     private final Collection<Particle> particles;
     private final double distanceToMars; // Initially, the max possible value;
+    private final double distanceToEarth; // Initially, the max possible value;
     private final double simulationTime;
 
     private SolarSystemState(final Collection<Particle> particles,
                              final double distanceToMars,
+                             final double distanceToEarth,
                              final double simulationTime) {
       this.particles = particles;
       this.distanceToMars = distanceToMars;
+      this.distanceToEarth = distanceToEarth;
       this.simulationTime = simulationTime;
     }
 
@@ -308,6 +368,7 @@ public class SolarSystem {
     public String toString() {
       final StringBuilder sb = new StringBuilder();
       sb.append("Min distance to Mars: ").append(distanceToMars).append(System.lineSeparator());
+      sb.append("Min distance to Earth: ").append(distanceToEarth).append(System.lineSeparator());
       sb.append("Simulation Time to min distance: ").append(simulationTime).append(System.lineSeparator());
       particles.forEach(particle -> sb.append(particle.toString()).append(System.lineSeparator()));
       return sb.toString();

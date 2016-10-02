@@ -12,7 +12,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,13 +46,13 @@ public class Main {
   private static final int SOLAR_SYSTEM_N = 4;
   private static final double SOLAR_SYSTEM_L = 1e12;
   private static final double SOLAR_SYSTEM_W = 1e12;
-  private static final double DAYS_TO_TAKE_OFF = 603.49;
-  private static final double SHIP_TAKE_OFF_V0 = 7 * KM_TO_M;
+  private static final double DAYS_TO_TAKE_OFF = 755;
+  private static final double SHIP_TAKE_OFF_V0 = 15 * KM_TO_M;
   // To use default, that is, tangential angle Earth-Sun, use 'null'
 //  private static final Vector2D SHIP_TAKE_OFF_ANGLE = null;
   // To use own angle, make your own vector. X and Y components will be used for vx and vy respectively
   // Vector will be converted to a versor to be used.
-  private static final Vector2D SHIP_TAKE_OFF_ANGLE = new Vector2D(-1, -2);
+  private static final Vector2D SHIP_TAKE_OFF_ANGLE = new Vector2D(-1, -.6873);
 
   private enum OutputType {
     SOLAR_SYSTEM,
@@ -67,12 +66,28 @@ public class Main {
           "* osc <path/to/static.dat> <type> <dt>\n" +
           "     runs the cushioned-oscillator simulation and saves snapshots of the system in <output.dat>.\n" +
           "     <type> can be 'analytic', 'verlet', 'beeman', 'gear'.\n" +
-          "* ss <dt> <ft>\n" +
-          "     Simulation of a space ship taking off with Mars as destination." +
+          "* toMars <dt> <ft> <days_to_take_off> <ship_take_off_v0> (<ship_take_off_angle_x> <ship_take_off_angle_y>)\n" +
+          "     Simulation of a space ship taking off from Earth with Mars as destination." +
           "     <dt> is the delta time represented with each iteration, in seconds." +
           "     <ft> is the final time that the system will be simulated.\n" +
+          "     <days_to_take_off> are the days to take off since the initial conditions.\n" +
+          "     <ship_take_off_v0> initial velocity's module of the ship.\n" +
+          "     Optional Arguments: \n" +
+          "       <ship_take_off_angle_x> initial velocity's angle of the ship in x direction.\n" +
+          "       <ship_take_off_angle_y> initial velocity's angle of the ship in y direction.\n" +
           "     Only The Sun, Earth, Mars and the spaceship are represented.\n" +
-          "     **Note** A 'static.dat' file is generated automatically.\n" +
+          "     **Note** A 'static.dat' file is generated automatically, although not needed.\n" +
+          "* toEarth <dt> <ft> <days_to_take_off> <ship_take_off_v0> (<ship_take_off_angle_x> <ship_take_off_angle_y>)\n" +
+          "     Simulation of a space ship taking off from Mars with Earth as destination." +
+          "     <dt> is the delta time represented with each iteration, in seconds." +
+          "     <ft> is the final time that the system will be simulated.\n" +
+          "     <days_to_take_off> are the days to take off since the initial conditions.\n" +
+          "     <ship_take_off_v0> initial velocity's module of the ship.\n" +
+          "     Optional Arguments: \n" +
+          "       <ship_take_off_angle_x> initial velocity's angle of the ship in x direction.\n" +
+          "       <ship_take_off_angle_y> initial velocity's angle of the ship in y direction.\n" +
+          "     Only The Sun, Earth, Mars and the spaceship are represented.\n" +
+          "     **Note** A 'static.dat' file is generated automatically, although not needed.\n" +
           "* gen ovito <path/to/static.dat> <path/to/output.dat>: \n"+
           "     generates an output/graphics.xyz file (for Ovito) with the result of the simulation\n " +
           "     (<output.dat>) generated with the static file.\n";
@@ -115,8 +130,11 @@ public class Main {
       case "osc":
         cushionedOscillator(args);
         break;
-      case "ss":
-        solarSystem(args);
+      case "toMars":
+        toMars(args);
+        break;
+      case "toEarth":
+        toEarth(args);
         break;
       case "min":
         minimumDistance();
@@ -315,14 +333,28 @@ public class Main {
   }
 
 
-  private static void solarSystem(final String[] args) {
-    if (args.length != 3) {
+  private static void toEarth(final String[] args) {
+    if (args.length != 7 && args.length != 5) {
       System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
       exit(BAD_N_ARGUMENTS);
     }
 
     final double dt = parseAsDouble(args[1], "<dt>");
     final double ft = parseAsDouble(args[2], "<ft>");
+    final double daysToTakeOff = parseAsDouble(args[3], "<days_to_take_off>");
+    final double shipTakeOffV0 = parseAsDouble(args[4], "<ship_take_off_v0>") * KM_TO_M;
+
+    System.out.println(dt + ", " + ft + ", " + daysToTakeOff + ", " + shipTakeOffV0 + ", ");
+
+    final Vector2D shipTakeOffAngle;
+
+    if (args.length == 7) {
+      final double shipTakeOffAngleX = parseAsDouble(args[5], "<ship_take_off_angle_x>");
+      final double shipTakeOffAngleY = parseAsDouble(args[6], "<ship_take_off_angle_y>");
+      shipTakeOffAngle = new Vector2D(shipTakeOffAngleX, shipTakeOffAngleY);
+    } else {
+      shipTakeOffAngle = null;
+    }
 
     // Generate static.dat file for this system to be used to generate ovito file in a future
     generateStaticDatFile(SOLAR_SYSTEM_N, -1, -1, -1, -1, -1, SOLAR_SYSTEM_W, SOLAR_SYSTEM_L);
@@ -340,7 +372,7 @@ public class Main {
     final SolarSystem solarSystem = new SolarSystem(dt);
 
     long i = 0;
-    double timeToTookOff = daysToSeconds(DAYS_TO_TAKE_OFF);
+    double timeToTookOff = daysToSeconds(daysToTakeOff);
 
     double currentTime = 0;
     while (currentTime < timeToTookOff) {
@@ -348,7 +380,69 @@ public class Main {
       currentTime +=dt;
     }
 
-    solarSystem.takeOff(SHIP_TAKE_OFF_V0, SHIP_TAKE_OFF_ANGLE);
+    solarSystem.takeOffFromMars(shipTakeOffV0, shipTakeOffAngle);
+
+    for (double systemTime = 0; systemTime < ft; systemTime += dt) {
+      evolve(solarSystem, i);
+      if (solarSystem.shipCrashedEarth()) {
+        System.out.println("[REACHED] - Ship landed on " + solarSystem.shipLandedTo());
+        generateOutputDatFile(OutputType.SOLAR_SYSTEM, solarSystem.getParticles(), i);
+        break;
+      }
+      i++;
+    }
+
+    generateReportFile(solarSystem.getMinDistanceToMarsSSState());
+  }
+
+  private static void toMars(final String[] args) {
+    if (args.length != 7 && args.length != 5) {
+      System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
+      exit(BAD_N_ARGUMENTS);
+    }
+
+    final double dt = parseAsDouble(args[1], "<dt>");
+    final double ft = parseAsDouble(args[2], "<ft>");
+    final double daysToTakeOff = parseAsDouble(args[3], "<days_to_take_off>");
+    final double shipTakeOffV0 = parseAsDouble(args[4], "<ship_take_off_v0>") * KM_TO_M;
+
+    System.out.println(dt + ", " + ft + ", " + daysToTakeOff + ", " + shipTakeOffV0 + ", ");
+
+    final Vector2D shipTakeOffAngle;
+
+    if (args.length == 7) {
+      final double shipTakeOffAngleX = parseAsDouble(args[5], "<ship_take_off_angle_x>");
+      final double shipTakeOffAngleY = parseAsDouble(args[6], "<ship_take_off_angle_y>");
+      shipTakeOffAngle = new Vector2D(shipTakeOffAngleX, shipTakeOffAngleY);
+    } else {
+      shipTakeOffAngle = null;
+    }
+
+    // Generate static.dat file for this system to be used to generate ovito file in a future
+    generateStaticDatFile(SOLAR_SYSTEM_N, -1, -1, -1, -1, -1, SOLAR_SYSTEM_W, SOLAR_SYSTEM_L);
+
+    // Create file for first iteration
+    final File dataFolder = new File(DESTINATION_FOLDER);
+    dataFolder.mkdirs(); // tries to make directories for the .dat files
+
+    final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
+
+    if(!deleteIfExists(pathToDatFile)) {
+      return;
+    }
+
+    final SolarSystem solarSystem = new SolarSystem(dt);
+
+    long i = 0;
+    double timeToTookOff = daysToSeconds(daysToTakeOff);
+
+    double currentTime = 0;
+    while (currentTime < timeToTookOff) {
+      evolve(solarSystem, i++);
+      currentTime +=dt;
+    }
+
+    solarSystem.takeOff(shipTakeOffV0, shipTakeOffAngle);
 
     for (double systemTime = 0; systemTime < ft; systemTime += dt) {
       evolve(solarSystem, i);
