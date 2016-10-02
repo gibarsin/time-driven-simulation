@@ -241,6 +241,26 @@ public class SolarSystem {
     addParticlesToSolarSystem(ship);
   }
 
+  public Vector2D getEarthPosition(){
+    Particle earth = null;
+    for(int i=0; i<solarSystem.length; i++){
+      if (solarSystem[i].type() == ParticleType.EARTH){
+        earth = solarSystem[i];
+      }
+    }
+    return new Vector2D(earth.x(), earth.y());
+  }
+
+  public Vector2D getSunPosition(){
+    Particle sun= null;
+    for(int i=0; i<solarSystem.length; i++){
+      if (solarSystem[i].type() == ParticleType.SUN){
+        sun = solarSystem[i];
+      }
+    }
+    return new Vector2D(sun.x(), sun.y());
+  }
+
   private static class ParticleData {
     Vector2D prevPosition;
     Vector2D prevPrev;
@@ -279,6 +299,10 @@ public class SolarSystem {
       this.particles = particles;
       this.distanceToMars = distanceToMars;
       this.simulationTime = simulationTime;
+    }
+
+    public double getDistanceToMars(){
+      return this.distanceToMars;
     }
 
     @Override
