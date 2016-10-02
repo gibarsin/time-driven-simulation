@@ -47,13 +47,13 @@ public class Main {
   private static final int SOLAR_SYSTEM_N = 4;
   private static final double SOLAR_SYSTEM_L = 1e12;
   private static final double SOLAR_SYSTEM_W = 1e12;
-  private static final double DAYS_TO_TAKE_OFF = 300;
-  private static final double SHIP_TAKE_OFF_V0 = 10 * KM_TO_M;
+  private static final double DAYS_TO_TAKE_OFF = 603.49;
+  private static final double SHIP_TAKE_OFF_V0 = 7 * KM_TO_M;
   // To use default, that is, tangential angle Earth-Sun, use 'null'
-  //private static final Vector2D SHIP_TAKE_OFF_ANGLE = null;
+//  private static final Vector2D SHIP_TAKE_OFF_ANGLE = null;
   // To use own angle, make your own vector. X and Y components will be used for vx and vy respectively
   // Vector will be converted to a versor to be used.
-  private static final Vector2D SHIP_TAKE_OFF_ANGLE = new Vector2D(-0.07472870397607634, -0.9972039013171059);
+  private static final Vector2D SHIP_TAKE_OFF_ANGLE = new Vector2D(-1, -2);
 
   private enum OutputType {
     SOLAR_SYSTEM,
@@ -231,8 +231,11 @@ public class Main {
         }
       }
     }
-    reports.add(minTravel);
-    generateReportFiles(reports);
+
+    if (minTravel != null) {
+      reports.add(minTravel);
+      generateReportFiles(reports);
+    }
 
   }
 

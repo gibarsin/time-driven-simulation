@@ -223,17 +223,16 @@ public class SolarSystem {
     Vector2D normalVersor = new Vector2D(earth.x()-sun.x(), earth.y()-sun.y());
     normalVersor.div(sunEarthDistance); // Normalize Vector
     // if there is a user defined vector => use that. If not, use default, that is, tangential vector earth-sun
-    Vector2D tgVersor = shipTakeOffAngle == null ?
-            new Vector2D(- normalVersor.y(), normalVersor.x()) :
-            shipTakeOffAngle.div(shipTakeOffAngle.norm2()); // vector to versor
+    Vector2D tgVersor = new Vector2D(- normalVersor.y(), normalVersor.x());
+    Vector2D ownAngle = shipTakeOffAngle == null ?
+            tgVersor : shipTakeOffAngle.div(shipTakeOffAngle.norm2()); // vector to versor
 
-    final double shipV0 = SHIP_ORBITAL_V0 + shipTakeOffV0;
     final Particle ship =
             Particle.builder( earth.x() + (earth.radio() + SHIP_DISTANCE_TO_EARTH) * normalVersor.x(),
                     earth.y() + (earth.radio() + SHIP_DISTANCE_TO_EARTH) * normalVersor.y() )
                     .mass(2E5)
-                    .vx(earth.vx() + shipV0 * tgVersor.x())
-                    .vy(earth.vy() + shipV0 * tgVersor.y())
+                    .vx(earth.vx() + SHIP_ORBITAL_V0 * tgVersor.x() + shipTakeOffV0 * ownAngle.x())
+                    .vy(earth.vy() + SHIP_ORBITAL_V0 * tgVersor.y() + shipTakeOffV0 * ownAngle.y())
                     .radio(SHIP_RADIUS) // Random radio
                     .type(ParticleType.SHIP)
                     .build();
