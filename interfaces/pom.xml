@@ -3,11 +3,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>ar.edu.itba.ss.cushioned_oscilator</groupId>
-    <artifactId>cushioned-oscilator</artifactId>
+    <groupId>ar.edu.itba.ss.time_driven_simulation</groupId>
+    <artifactId>time-driven-simulation</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
-  <groupId>ar.edu.itba.ss.cushioned_oscilator</groupId>
+  <groupId>ar.edu.itba.ss.time_driven_simulation</groupId>
   <artifactId>interfaces</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <name>interfaces</name>
@@ -23,7 +23,7 @@
       <scope>test</scope>
     </dependency>
       <dependency>
-          <groupId>ar.edu.itba.ss.cushioned_oscilator</groupId>
+          <groupId>ar.edu.itba.ss.time_driven_simulation</groupId>
           <artifactId>models</artifactId>
           <version>1.0.0-SNAPSHOT</version>
       </dependency>

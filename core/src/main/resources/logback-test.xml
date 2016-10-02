@@ -9,7 +9,7 @@
     </appender>
 
 
-    <appender name="cushioned-oscilator-appender" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="time-driven-simulation-appender" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${defaultPattern:-}</pattern>
         </encoder>
@@ -19,8 +19,8 @@
         <appender-ref ref="root-appender" />
     </root>
 
-    <logger name="ar.edu.itba.ss.cushioned_oscilator" level="DEBUG" additivity="false">
-        <appender-ref ref="cushioned-oscilator-appender" />
+    <logger name="ar.edu.itba.ss.time_driven_simulation" level="DEBUG" additivity="false">
+        <appender-ref ref="time-driven-simulation-appender" />
     </logger>
 
 </configuration>

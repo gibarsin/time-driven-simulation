@@ -5,7 +5,7 @@
     <appender name="root-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <maxHistory>5</maxHistory>
-            <fileNamePattern>logs/cushioned-oscilator.warnings.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/time-driven-simulation.warnings.%d{yyyy-MM-dd}.log</fileNamePattern>
         </rollingPolicy>
         <encoder>
             <pattern>${defaultPattern:-}</pattern>
@@ -13,10 +13,10 @@
     </appender>
 
 
-    <appender name="cushioned-oscilator-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="time-driven-simulation-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <maxHistory>5</maxHistory>
-            <fileNamePattern>logs/cushioned-oscilator.own.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/time-driven-simulation.own.%d{yyyy-MM-dd}.log</fileNamePattern>
         </rollingPolicy>
         <encoder>
             <pattern>${defaultPattern:-}</pattern>
@@ -27,8 +27,8 @@
         <appender-ref ref="root-appender" />
     </root>
 
-    <logger name="ar.edu.itba.ss.cushioned_oscilator" level="INFO" additivity="false">
-        <appender-ref ref="cushioned-oscilator-appender" />
+    <logger name="ar.edu.itba.ss.time_driven_simulation" level="INFO" additivity="false">
+        <appender-ref ref="time-driven-simulation-appender" />
     </logger>
 
 </configuration>
