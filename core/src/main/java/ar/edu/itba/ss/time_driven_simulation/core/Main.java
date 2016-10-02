@@ -344,8 +344,6 @@ public class Main {
     final double daysToTakeOff = parseAsDouble(args[3], "<days_to_take_off>");
     final double shipTakeOffV0 = parseAsDouble(args[4], "<ship_take_off_v0>") * KM_TO_M;
 
-    System.out.println(dt + ", " + ft + ", " + daysToTakeOff + ", " + shipTakeOffV0 + ", ");
-
     final Vector2D shipTakeOffAngle;
 
     if (args.length == 7) {
@@ -405,8 +403,6 @@ public class Main {
     final double ft = parseAsDouble(args[2], "<ft>");
     final double daysToTakeOff = parseAsDouble(args[3], "<days_to_take_off>");
     final double shipTakeOffV0 = parseAsDouble(args[4], "<ship_take_off_v0>") * KM_TO_M;
-
-    System.out.println(dt + ", " + ft + ", " + daysToTakeOff + ", " + shipTakeOffV0 + ", ");
 
     final Vector2D shipTakeOffAngle;
 
