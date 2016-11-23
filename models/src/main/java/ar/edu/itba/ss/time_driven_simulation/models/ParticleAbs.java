@@ -106,8 +106,17 @@ public abstract class ParticleAbs {
     }
   }
 
-
-
+  public Particle update(final Vector2D uP, final Vector2D uV, final Vector2D uF) {
+    return Particle.builder(uP.x(), uP.y())
+            .vx(uV.x()).vy(uV.y())
+            .forceX(uF.x()).forceY(uF.y())
+            .id(id())
+            .type(type())
+            .isColliding(isColliding())
+            .mass(mass())
+            .radio(radio())
+            .ageInDays(ageInDays()).build();
+  }
 
   /**
    * Prints the immutable value {@code Point} with attribute values.
@@ -115,7 +124,7 @@ public abstract class ParticleAbs {
    */
   @Override
   public String toString() {
-    return "Point{"
+    return "Particle{"
             + "id=" + id()
             + ", type= " + type()
             + ", x=" + x()

@@ -1,10 +1,12 @@
 package ar.edu.itba.ss.time_driven_simulation.core;
 
 import ar.edu.itba.ss.time_driven_simulation.interfaces.Oscillator;
+import ar.edu.itba.ss.time_driven_simulation.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.time_driven_simulation.models.Particle;
 import ar.edu.itba.ss.time_driven_simulation.models.ParticleType;
 import ar.edu.itba.ss.time_driven_simulation.models.Vector2D;
 import ar.edu.itba.ss.time_driven_simulation.services.*;
+import ar.edu.itba.ss.time_driven_simulation.core.systems.oscillator.GearOscillatorSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,6 +142,10 @@ public class Main {
         minimumDistance();
         break;
 
+      case "int":
+        integration(args);
+        break;
+
       default:
         System.out.println("[FAIL] - Invalid argument. Try 'help' for more information.");
         exit(BAD_ARGUMENT);
@@ -147,6 +153,62 @@ public class Main {
     }
 
     System.out.println("[DONE]");
+  }
+
+  private static void integration(final String[] args) {
+    if (args.length != 3) {
+      System.out.println("[FAIL] - Bad number of arguments. Try 'help' for more information.");
+      exit(BAD_N_ARGUMENTS);
+    }
+
+    double dt = 0;
+    try {
+      dt = Double.parseDouble(args[2]);
+    } catch (NumberFormatException e) {
+      LOGGER.warn("[FAIL] - <dt> must be a number. Caused by: ", e);
+      System.out.println("[FAIL] - <dt> argument must be a number. Try 'help' for more information.");
+      exit(BAD_ARGUMENT);
+    }
+
+
+    final StaticData staticData = loadStaticFile(args[1]);
+
+    if(staticData.N <= 0  || staticData.mass <= 0 || staticData.k < 0 || staticData.tf < 0) {
+      System.out.println("[FAIL] - The following must not happen: N<0 or mass < 0 or k < 0 or tf < 0.\n" +
+              "Please check the input files.");
+      exit(BAD_ARGUMENT);
+    }
+
+    final TimeDrivenSimulationSystem oscillator = new GearOscillatorSystem(
+            staticData.mass,
+            staticData.r,
+            staticData.k,
+            staticData.gamma
+    );
+
+    // Create file for first iteration
+    final File dataFolder = new File(DESTINATION_FOLDER);
+    dataFolder.mkdirs(); // tries to make directories for the .dat files
+
+    /* delete previous dynamic.dat file, if any */
+    final Path pathToDatFile = Paths.get(DESTINATION_FOLDER, OUTPUT_FILE);
+
+    if(!deleteIfExists(pathToDatFile)) {
+      return;
+    }
+
+    List<Particle> particles;
+
+    long i = 0;
+    for(double systemTime = 0; systemTime < staticData.tf; systemTime += dt) {
+      if(i%10 == 0){ // print system after 10 dt units
+        particles = new ArrayList<>();
+        particles.addAll(oscillator.getSystemData().particles());
+        generateOutputDatFile(OutputType.COMMON, particles, i);
+      }
+      oscillator.evolveSystem(dt);
+      i++;
+    }
   }
 
   /**
